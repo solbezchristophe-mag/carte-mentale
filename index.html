@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Carte mentale interactive — version propre</title>
+  <link rel="stylesheet" href="styles.css?v=20260913-clean" />
+</head>
+<body>
+  <!-- Zone principale de la carte mentale -->
+  <main id="mindmap" aria-label="Carte mentale interactive">
+    <!-- Calque d’arrière-plan des icônes libres -->
+    <canvas id="freeIconLayer" aria-label="Icônes libres arrière-plan"></canvas>
+    <!-- Dessin SVG des branches, idées et sous-idées -->
+    <svg id="connections" aria-hidden="true"></svg>
+    <!-- Calque d’icônes libres pouvant passer visuellement devant les branches.
+         Il reste non interactif : les branches gardent toujours la priorité souris. -->
+    <canvas id="freeIconFrontLayer" aria-label="Icônes libres premier plan"></canvas>
+
+    <!-- Sujet central -->
+    <section id="centre" class="centre" aria-label="Sujet central">
+      <textarea id="centreInput" rows="3" spellcheck="false" aria-label="Nom du projet">MON PROJET</textarea>
+      <button id="addBranch" class="add-main-button" type="button">+ Ajouter une branche</button>
+    </section>
+
+    <!-- Calques d’interaction -->
+    <div id="branchControlsLayer"></div>
+    <div id="freeIconOverlayLayer" aria-label="Contrôles des icônes"></div>
+    <div id="freeIconResizePreview" class="free-icon-resize-preview" aria-hidden="true"></div>
+    <div id="editorLayer"></div>
+
+    <button id="addFreeIcon" class="add-free-icon-button" type="button">+ Icône</button>
+    <button id="resetMap" class="reset-button" type="button">Recommencer</button>
+  </main>
+
+  <!-- Fenêtre de sélection et de recherche d’icônes -->
+  <div id="iconPicker" class="icon-picker" aria-hidden="true">
+    <div id="iconPickerBackdrop" class="icon-picker-backdrop"></div>
+    <section class="icon-picker-panel" role="dialog" aria-modal="true" aria-label="Choisir une icône">
+      <div class="icon-picker-header">
+        <div>
+          <strong>Choisir une icône</strong>
+          <small>Choisissez une icône puis : seule ou avec le texte</small>
+        </div>
+        <button id="iconPickerClose" class="icon-picker-close" type="button" aria-label="Fermer">×</button>
+      </div>
+      <div id="iconPickerGrid" class="icon-picker-grid"></div>
+    </section>
+  </div>
+
+  <script src="app.js?v=20260913-clean"></script>
+</body>
+</html>

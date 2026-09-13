@@ -1,0 +1,3818 @@
+/* ============================================================
+   CARTE MENTALE — FEUILLE DE STYLE
+   Version V13 : code rangé, sans changement fonctionnel voulu
+
+   Organisation :
+   1. Base et mise en page
+   2. Sujet central
+   3. Branches, idées et sous-idées
+   4. Menus et contrôles
+   5. Sélecteur / recherche d’icônes
+   6. Icônes libres
+   7. Responsive mobile / tablette
+   8. Correctifs Safari
+   9. Relief visuel
+   ============================================================ */
+
+:root {
+
+  --paper: #fffefb;
+  --ink: #173a51;
+  --centre: #24b8c7;
+
+}
+
+* {
+
+  box-sizing: border-box;
+
+}
+
+html,body {
+
+  width: 100%;
+  height: 100%;
+  margin: 0;
+
+}
+
+body {
+
+  overflow: hidden;
+  color: var(--ink);
+  background: radial-gradient(circle at 50% 48%,#fff 0 42%,#fffefa 74%,#f4f0e8 100%);
+  font-family: "Comic Sans MS","Bradley Hand","Segoe Print",cursive;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+
+}
+
+#mindmap {
+
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  min-width: 0;
+  min-height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+
+}
+
+#connections {
+
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  z-index: 20;
+  pointer-events: none;
+
+}
+
+.centre {
+
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%) rotate(-.4deg);
+  z-index: 40;
+  width: clamp(215px,17.5vw,275px);
+  min-height: clamp(120px,14.5vh,152px);
+  padding: 0;
+  background: #fff;
+  border: 5px solid var(--centre);
+  border-radius: 47% 53% 46% 54% / 52% 46% 54% 48%;
+  box-shadow: 0 8px 24px rgba(21,83,97,.10);
+
+}
+
+.centre textarea {
+
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+  width: 88%;
+  height: auto;
+  min-width: 0;
+  padding: 0 3px;
+  border: 0;
+  outline: 0;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: #153e58;
+  text-align: center;
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: -.025em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  display: block;
+
+}
+
+.centre textarea:focus {
+
+  background: rgba(34,183,199,.05);
+  border-radius: 14px;
+  box-shadow: 0 0 0 2px rgba(34,183,199,.14);
+
+}
+
+.add-main-button {
+
+  position: absolute;
+  left: 50%;
+  bottom: 9px;
+  transform: translateX(-50%);
+  max-width: 86%;
+  white-space: nowrap;
+  border: 0;
+  border-radius: 20px;
+  padding: 6px 11px;
+  background: var(--centre);
+  color: #fff;
+  cursor: pointer;
+  font: 800 10.5px/1 Arial,sans-serif;
+  box-shadow: 0 3px 8px rgba(0,0,0,.12);
+
+}
+
+.add-main-button:disabled {
+
+  opacity: .48;
+  cursor: default;
+  box-shadow: none;
+
+}
+
+.main-line {
+
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,.75));
+
+}
+
+.branch-hit {
+
+  stroke: transparent;
+  fill: none;
+  pointer-events: stroke;
+  cursor: pointer;
+
+}
+
+.branch-text {
+
+  font-family: "Comic Sans MS","Bradley Hand","Segoe Print",cursive;
+  font-weight: 800;
+  cursor: pointer;
+  user-select: none;
+  pointer-events: auto;
+  paint-order: stroke;
+  stroke: rgba(255,255,255,.98);
+  stroke-linejoin: round;
+
+}
+
+.branch-text.main {
+
+  font-size: clamp(17px,1.35vw,22px);
+  font-weight: 900;
+  stroke-width: 4.5px;
+
+}
+
+.branch-text.child {
+
+  font-size: clamp(11.5px,.90vw,14.5px);
+  font-weight: 700;
+  stroke-width: 3.4px;
+
+}
+
+.branch-text.grandchild {
+
+  font-size: clamp(9px,.68vw,11px);
+  font-weight: 700;
+  stroke-width: 2.7px;
+
+}
+
+#branchControlsLayer,#editorLayer {
+
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+}
+
+#branchControlsLayer {
+
+  z-index: 70;
+
+}
+
+#editorLayer {
+
+  z-index: 200;
+
+}
+
+.control-group,.child-control-group {
+
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-50%,-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .13s ease,visibility .13s ease;
+  --branch-color: #ef3f7b;
+
+}
+
+.control-group.visible,.child-control-group.visible {
+
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+
+}
+
+.control-group::before,.child-control-group::before {
+
+  content: "";
+  position: absolute;
+  inset: -20px -30px;
+  z-index: -1;
+
+}
+
+.dot-button,.color-button {
+
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,.1);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: #fff;
+  box-shadow: 0 3px 9px rgba(0,0,0,.14);
+  cursor: pointer;
+  font: 800 15px/1 Arial,sans-serif;
+
+}
+
+.dot-button:hover,.color-button:hover {
+
+  transform: scale(1.08);
+
+}
+
+.dot-button:disabled {
+
+  opacity: .28;
+  cursor: default;
+  transform: none;
+
+}
+
+.add-button {
+
+  background: var(--branch-color,var(--centre));
+  color: #fff;
+  border: 2px solid rgba(255,255,255,.96);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.07), 0 6px 14px rgba(0,0,0,.18);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px 1px rgba(0,0,0,.18);
+
+}
+
+.child-control-group .add-button {
+
+  font-size: 17px;
+
+}
+
+.delete-button {
+
+  color: #b83f3f;
+
+}
+
+.child-control-group .dot-button {
+
+  width: 25px;
+  height: 25px;
+  font-size: 14px;
+
+}
+
+.color-wrap {
+
+  position: relative;
+  width: 27px;
+  height: 27px;
+
+}
+
+.color-button {
+
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-size: 13px;
+
+}
+
+.color-input {
+
+  position: absolute;
+  inset: 0;
+  width: 27px;
+  height: 27px;
+  opacity: 0;
+  cursor: pointer;
+
+}
+
+.branch-editor {
+
+  position: absolute;
+  width: min(245px,70vw);
+  transform: translate(-50%,-50%);
+  border: 3px solid var(--editor-color,var(--centre));
+  border-radius: 20px;
+  outline: none;
+  padding: 9px 12px;
+  background: #fff;
+  color: #263d49;
+  pointer-events: auto;
+  font: 800 16px/1.2 "Comic Sans MS","Bradley Hand","Segoe Print",cursive;
+  box-shadow: 0 7px 20px rgba(0,0,0,.16);
+
+}
+
+.reset-button {
+
+  position: fixed;
+  right: 15px;
+  bottom: 13px;
+  z-index: 100;
+  border: 0;
+  border-radius: 18px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,.86);
+  color: #67747a;
+  cursor: pointer;
+  font: 700 12px/1 Arial,sans-serif;
+  box-shadow: 0 3px 10px rgba(0,0,0,.08);
+
+}
+
+@media (max-width:1100px) {
+
+  #mindmap {
+
+    min-width: 800px;
+
+  }
+
+  .centre {
+
+    width: 205px;
+    min-height: 116px;
+
+  }
+
+  .centre textarea {
+
+    height: 62px;
+    font-size: 18px;
+
+  }
+
+  .add-main-button {
+
+    bottom: 8px;
+    padding: 5px 9px;
+    font-size: 9.5px;
+
+  }
+
+  .branch-text.main {
+
+    font-size: 15px;
+
+  }
+
+  .branch-text.child {
+
+    font-size: 11.5px;
+
+  }
+
+}
+
+/* Poignée de redimensionnement direct des grandes branches */
+
+.main-drag-handle {
+
+  pointer-events: all;
+  cursor: ew-resize;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.12));
+  transition: r .12s ease,stroke-width .12s ease;
+
+}
+
+.main-drag-handle:hover {
+
+  r: 10;
+  stroke-width: 4.5;
+
+}
+
+body.dragging-branch,.dragging-branch * {
+
+  cursor: grabbing !important;
+  user-select: none !important;
+
+}
+
+/* La poignée de longueur reste toujours au-dessus des éléments SVG, et les menus
+   sont masqués pendant le glisser pour éviter toute interception du pointeur. */
+
+body.dragging-branch .control-group,
+body.dragging-branch .child-control-group {
+
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+
+}
+
+.child-control-group .color-wrap {
+
+  width: 25px;
+  height: 25px;
+
+}
+
+.child-control-group .color-button,
+.child-control-group .color-input {
+
+  width: 25px;
+  height: 25px;
+
+}
+
+.child-control-group .color-button {
+
+  font-size: 12px;
+
+}
+
+/* Poignées réglables pour idées et sous-idées */
+
+.node-drag-handle {
+
+  pointer-events: all;
+  cursor: grab;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.13));
+  transition: r .12s ease,stroke-width .12s ease;
+
+}
+
+.node-drag-handle:hover {
+
+  r: 8;
+  stroke-width: 3.6;
+
+}
+
+body.dragging-branch .node-drag-handle,
+body.dragging-branch .main-drag-handle {
+
+  cursor: grabbing !important;
+
+}
+
+/* Pendant un glisser, aucun menu ne peut intercepter la souris. */
+
+body.dragging-branch #branchControlsLayer {
+
+  pointer-events: none !important;
+
+}
+
+/* Menus des idées : zone compacte et décalée afin de ne jamais recouvrir
+   la poignée située à l'extrémité de la courbe. */
+
+.child-control-group::before {
+
+  inset: -9px -12px;
+
+}
+
+.child-control-group {
+
+  z-index: 80;
+
+}
+
+.node-drag-handle {
+
+  cursor: move;
+
+}
+
+.node-drag-handle:hover {
+
+  r: 8.5;
+  stroke-width: 3.8;
+
+}
+
+/* Déplacement libre des grandes branches, identique aux idées. */
+
+.main-drag-handle {
+
+  cursor: move;
+
+}
+
+.main-drag-handle:hover {
+
+  r: 10;
+  stroke-width: 4.5;
+
+}
+
+/* Hiérarchie visuelle : les idées sont volontairement plus épaisses que les sous-idées. */
+
+/* Icônes de remplacement des libellés */
+
+.branch-icon {
+
+  pointer-events: all;
+  cursor: pointer;
+
+}
+
+.branch-icon image {
+
+  pointer-events: none;
+
+}
+
+.branch-icon circle {
+
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.10));
+
+}
+
+.text-button,.icon-button {
+
+  font-size: 12px;
+  font-weight: 900;
+  color: #4d5d65;
+  background: #fff;
+
+}
+
+.icon-button {
+
+  font-size: 13px;
+
+}
+
+.control-group,.child-control-group {
+
+  gap: 3px;
+
+}
+
+/* Panneau d'icônes intégré : aucun lien ou URL à saisir */
+
+.icon-picker {
+
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: Arial,sans-serif;
+
+}
+
+.icon-picker.open {
+
+  display: flex;
+
+}
+
+.icon-picker-backdrop {
+
+  position: absolute;
+  inset: 0;
+  background: rgba(20,38,48,.28);
+  backdrop-filter: blur(2px);
+
+}
+
+.icon-picker-panel {
+
+  position: relative;
+  width: min(720px,88vw);
+  max-height: min(650px,82vh);
+  overflow: hidden;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.22);
+  border: 1px solid rgba(24,66,82,.10);
+
+}
+
+.icon-picker-header {
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #e8eef0;
+
+}
+
+.icon-picker-header strong {
+
+  display: block;
+  font-size: 18px;
+  color: #173a51;
+
+}
+
+.icon-picker-header small {
+
+  display: block;
+  margin-top: 3px;
+  color: #75848b;
+  font-size: 12px;
+
+}
+
+.icon-picker-close {
+
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: #f1f5f6;
+  color: #51666f;
+  font-size: 22px;
+  cursor: pointer;
+
+}
+
+.icon-picker-grid {
+
+  display: grid;
+  grid-template-columns: repeat(6,minmax(78px,1fr));
+  gap: 9px;
+  padding: 16px 18px 22px;
+  max-height: calc(min(650px,82vh) - 73px);
+  overflow: auto;
+
+}
+
+.icon-picker-section-title {
+
+  grid-column: 1/-1;
+  margin: 8px 2px 0;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #71828a;
+
+}
+
+.icon-picker-section-title:first-of-type {
+
+  margin-top: 2px;
+
+}
+
+.icon-choice {
+
+  min-height: 76px;
+  border: 1px solid #e0e8eb;
+  border-radius: 15px;
+  background: #fff;
+  color: #40545c;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  font: 700 11px/1.1 Arial,sans-serif;
+  transition: transform .12s ease,border-color .12s ease,box-shadow .12s ease;
+
+}
+
+.icon-choice:hover {
+
+  transform: translateY(-2px);
+  border-color: var(--centre);
+  box-shadow: 0 5px 16px rgba(28,93,110,.12);
+
+}
+
+.icon-choice.selected {
+
+  border: 2px solid var(--centre);
+  background: rgba(36,184,199,.07);
+
+}
+
+.icon-choice-glyph {
+
+  font-size: 29px;
+  line-height: 1;
+
+}
+
+.icon-choice-text .icon-choice-glyph {
+
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #edf3f5;
+  color: #314c57;
+  font: bold 18px/1 Arial,sans-serif;
+
+}
+
+.branch-icon-glyph {
+
+  font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  pointer-events: none;
+
+}
+
+@media (max-width:850px) {
+
+  .icon-picker-grid {
+
+    grid-template-columns: repeat(4,minmax(72px,1fr));
+
+  }
+
+  .icon-picker-panel {
+
+    width: 92vw;
+
+  }
+
+}
+
+/* Modes d’affichage texte / icône */
+
+.icon-mode-title {
+
+  margin-top: 0 !important;
+
+}
+
+.icon-mode-choice .icon-choice-glyph {
+
+  font-family: Arial,sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: #275464;
+
+}
+
+/* Icônes intégrées au même emplacement que le texte : aucune pastille ne coupe la courbe. */
+
+.branch-icon {
+
+  background: transparent;
+
+}
+
+.branch-icon image {
+
+  filter: drop-shadow(0 1px 1px rgba(255,255,255,.65));
+
+}
+
+/* Icônes libres placées sur la page */
+
+#freeIconLayer {
+
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+
+}
+
+.add-free-icon-button {
+
+  position: fixed;
+  right: 16px;
+  top: 14px;
+  z-index: 140;
+  border: 0;
+  border-radius: 20px;
+  padding: 9px 14px;
+  background: #fff;
+  color: #275464;
+  cursor: pointer;
+  font: 800 12px/1 Arial,sans-serif;
+  box-shadow: 0 4px 14px rgba(0,0,0,.12);
+  border: 1px solid rgba(39,84,100,.12);
+
+}
+
+.add-free-icon-button:hover {
+
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0,0,0,.15);
+
+}
+
+.free-icon-item {
+
+  position: absolute;
+  transform: translate(-50%,-50%);
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  user-select: none;
+  touch-action: none;
+  cursor: move;
+  line-height: 1;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.10));
+
+}
+
+.free-icon-glyph {
+
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  line-height: 1;
+  overflow: visible;
+
+}
+
+.free-icon-resize {
+
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #24b8c7;
+  box-shadow: 0 2px 6px rgba(0,0,0,.22);
+  cursor: nwse-resize;
+  opacity: 0;
+  transition: opacity .12s ease;
+
+}
+
+.free-icon-delete {
+
+  position: absolute;
+  right: -9px;
+  top: -10px;
+  width: 21px;
+  height: 21px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #b83f3f;
+  box-shadow: 0 2px 7px rgba(0,0,0,.18);
+  font: 900 15px/18px Arial,sans-serif;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .12s ease;
+  padding: 0;
+
+}
+
+.free-icon-item:hover .free-icon-resize,
+.free-icon-item:hover .free-icon-delete,
+.free-icon-item.active .free-icon-resize,
+.free-icon-item.active .free-icon-delete {
+
+  opacity: 1;
+
+}
+
+body.dragging-free-icon .free-icon-item {
+
+  cursor: grabbing;
+
+}
+
+/* Réglage individuel de la taille des textes */
+
+.font-down-button,.font-up-button {
+
+  width: 31px;
+  border-radius: 14px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: -.04em;
+  color: #36515d;
+
+}
+
+.child-control-group .font-down-button,
+.child-control-group .font-up-button {
+
+  width: 29px;
+  height: 25px;
+  font-size: 9px;
+
+}
+
+/* Contrôles de transformation des icônes libres */
+
+.free-icon-rotate {
+
+  position: absolute;
+  left: 50%;
+  top: -28px;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #24b8c7;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 7px rgba(0,0,0,.22);
+  font: 900 14px/1 Arial,sans-serif;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity .12s ease;
+
+}
+
+.free-icon-flip {
+
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #275464;
+  box-shadow: 0 2px 7px rgba(0,0,0,.18);
+  font: 900 13px/1 Arial,sans-serif;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .12s ease;
+  padding: 0;
+
+}
+
+.free-icon-flip-h {
+
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+
+}
+
+.free-icon-flip-v {
+
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+
+}
+
+.free-icon-item:hover .free-icon-rotate,
+.free-icon-item:hover .free-icon-flip,
+.free-icon-item.active .free-icon-rotate,
+.free-icon-item.active .free-icon-flip {
+
+  opacity: 1;
+
+}
+
+body.dragging-free-icon .free-icon-rotate {
+
+  cursor: grabbing;
+
+}
+
+.free-icon-glyph {
+
+  transform-origin: 50% 50%;
+  transition: transform .05s linear;
+
+}
+
+/* Sources supplémentaires d'icônes : image perso + recherche Internet */
+
+.external-icon-title {
+
+  margin-top: 14px !important;
+
+}
+
+.external-icon-tools {
+
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns: minmax(150px,190px) 1fr;
+  gap: 12px;
+  padding: 4px 0 8px;
+
+}
+
+.external-icon-upload {
+
+  min-height: 92px;
+  border: 1px dashed rgba(36,184,199,.55);
+  border-radius: 16px;
+  background: rgba(36,184,199,.05);
+  color: #275464;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: Arial,sans-serif;
+
+}
+
+.external-icon-upload span {
+
+  font-size: 30px;
+
+}
+
+.external-icon-upload strong {
+
+  font-size: 13px;
+
+}
+
+.external-icon-upload small {
+
+  font-size: 10px;
+  color: #77878e;
+
+}
+
+.external-icon-upload:hover {
+
+  border-color: var(--centre);
+  background: rgba(36,184,199,.10);
+
+}
+
+.internet-icon-search {
+
+  border: 1px solid #e0e8eb;
+  border-radius: 16px;
+  padding: 10px;
+  background: #fafcfc;
+  min-width: 0;
+
+}
+
+.internet-icon-search-row {
+
+  display: flex;
+  gap: 7px;
+
+}
+
+.internet-icon-input {
+
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #d6e1e4;
+  border-radius: 11px;
+  padding: 9px 10px;
+  outline: none;
+  font: 600 12px/1 Arial,sans-serif;
+  color: #314b55;
+  background: #fff;
+
+}
+
+.internet-icon-input:focus {
+
+  border-color: var(--centre);
+  box-shadow: 0 0 0 3px rgba(36,184,199,.10);
+
+}
+
+.internet-icon-button {
+
+  border: 0;
+  border-radius: 11px;
+  padding: 0 12px;
+  background: var(--centre);
+  color: #fff;
+  cursor: pointer;
+  font: 800 11px/1 Arial,sans-serif;
+
+}
+
+.internet-icon-button:disabled {
+
+  opacity: .55;
+  cursor: wait;
+
+}
+
+.internet-icon-search>small {
+
+  display: block;
+  margin-top: 6px;
+  color: #849198;
+  font-size: 10px;
+
+}
+
+.internet-icon-status {
+
+  margin-top: 6px;
+  color: #5d737c;
+  font: 700 10px/1.2 Arial,sans-serif;
+  min-height: 12px;
+
+}
+
+.internet-icon-results {
+
+  display: grid;
+  grid-template-columns: repeat(8,minmax(42px,1fr));
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 178px;
+  overflow: auto;
+
+}
+
+.internet-icon-result {
+
+  height: 58px;
+  border: 1px solid #e3eaec;
+  border-radius: 10px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 4px;
+  overflow: hidden;
+
+}
+
+.internet-icon-result:hover {
+
+  border-color: var(--centre);
+  box-shadow: 0 3px 10px rgba(28,93,110,.10);
+
+}
+
+.internet-icon-result img {
+
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+
+}
+
+.internet-icon-result span {
+
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 8px/1 Arial,sans-serif;
+  color: #657980;
+
+}
+
+.free-icon-image {
+
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  transform-origin: 50% 50%;
+  user-select: none;
+  pointer-events: none;
+
+}
+
+@media (max-width:850px) {
+
+  .external-icon-tools {
+
+    grid-template-columns: 1fr;
+
+  }
+
+  .internet-icon-results {
+
+    grid-template-columns: repeat(5,minmax(42px,1fr));
+
+  }
+
+}
+
+/* Correction : aucune sélection bleue pendant déplacement / redimensionnement / rotation */
+
+.free-icon-item,
+.free-icon-item *,
+.free-icon-resize,
+.free-icon-rotate,
+.free-icon-flip,
+.free-icon-delete {
+
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+
+}
+
+.free-icon-resize,
+.free-icon-rotate {
+
+  touch-action: none;
+
+}
+
+body.dragging-free-icon,
+body.dragging-free-icon * {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+
+}
+
+body.dragging-free-icon {
+
+  touch-action: none;
+
+}
+
+/* Correctif Safari/iOS : aucune surbrillance bleue persistante sur les icônes libres */
+
+.free-icon-item,
+.free-icon-item *,
+.free-icon-image,
+.free-icon-glyph,
+.free-icon-resize,
+.free-icon-rotate,
+.free-icon-flip,
+.free-icon-delete {
+
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  outline: none !important;
+
+}
+
+.free-icon-image {
+
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+
+}
+
+.free-icon-item:focus,
+.free-icon-item:focus-visible,
+.free-icon-resize:focus,
+.free-icon-rotate:focus,
+.free-icon-flip:focus,
+.free-icon-delete:focus {
+
+  outline: none !important;
+  box-shadow: none;
+
+}
+
+body.dragging-free-icon,
+body.dragging-free-icon * {
+
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+/* Correctif définitif des anciennes icônes image : elles sont rendues comme
+   arrière-plan d'un bloc neutre, donc Safari ne peut plus leur appliquer
+   la sélection/teinte bleue native des balises image. */
+
+.free-icon-image {
+
+  width: 100%;
+  height: 100%;
+  display: block;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+.free-icon-item::selection,
+.free-icon-item *::selection {
+
+  background: transparent !important;
+
+}
+
+/* Version responsive tablette / mobile */
+
+@media (max-width: 1180px) {
+
+  #mindmap {
+
+    height: 100dvh;
+    min-height: 100dvh;
+
+  }
+
+  .centre {
+
+    width: clamp(190px,22vw,245px);
+    min-height: clamp(106px,13vh,138px);
+    border-width: 4px;
+
+  }
+
+  .centre textarea {
+
+    width: 86%;
+    font-size: 18px;
+
+  }
+
+  .add-main-button {
+
+    font-size: 10px;
+    padding: 6px 10px;
+    bottom: 8px;
+
+  }
+
+  .branch-text.main {
+
+    font-size: 15px;
+    stroke-width: 4px;
+
+  }
+
+  .branch-text.child {
+
+    font-size: 11px;
+    stroke-width: 3px;
+
+  }
+
+  .branch-text.grandchild {
+
+    font-size: 9px;
+    stroke-width: 2.5px;
+
+  }
+
+  .add-free-icon-button {
+
+    top: 12px;
+    right: 12px;
+
+  }
+
+  .reset-button {
+
+    right: 12px;
+    bottom: 12px;
+
+  }
+
+  .icon-picker-panel {
+
+    width: min(760px,94vw);
+    max-height: 86vh;
+
+  }
+
+  .icon-picker-grid {
+
+    grid-template-columns: repeat(5,minmax(70px,1fr));
+
+  }
+
+}
+
+@media (max-width: 820px) {
+
+  body {
+
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+
+  }
+
+  #mindmap {
+
+    width: 100vw;
+    height: 100dvh;
+    min-height: 100dvh;
+
+  }
+
+  .centre {
+
+    width: clamp(150px,31vw,205px);
+    min-height: clamp(92px,12vh,120px);
+    border-width: 4px;
+    box-shadow: 0 6px 18px rgba(21,83,97,.10);
+
+  }
+
+  .centre textarea {
+
+    width: 84%;
+    font-size: 15px;
+    line-height: 1.05;
+
+  }
+
+  .add-main-button {
+
+    max-width: 84%;
+    padding: 5px 8px;
+    font-size: 9px;
+    bottom: 7px;
+    border-radius: 16px;
+
+  }
+
+  .branch-text.main {
+
+    font-size: 13px;
+    stroke-width: 3.5px;
+
+  }
+
+  .branch-text.child {
+
+    font-size: 10px;
+    stroke-width: 2.8px;
+
+  }
+
+  .branch-text.grandchild {
+
+    font-size: 8.5px;
+    stroke-width: 2.2px;
+
+  }
+
+  .dot-button,.color-button {
+
+    width: 33px;
+    height: 33px;
+    font-size: 16px;
+
+  }
+
+  .child-control-group .dot-button {
+
+    width: 31px;
+    height: 31px;
+    font-size: 15px;
+
+  }
+
+  .color-wrap {
+
+    width: 33px;
+    height: 33px;
+
+  }
+
+  .color-input {
+
+    width: 33px;
+    height: 33px;
+
+  }
+
+  .color-button {
+
+    font-size: 14px;
+
+  }
+
+  .child-control-group .color-wrap,
+  .child-control-group .color-button,
+  .child-control-group .color-input {
+
+    width: 31px;
+    height: 31px;
+
+  }
+
+  .branch-editor {
+
+    width: min(320px,88vw);
+    font-size: 16px;
+    padding: 10px 12px;
+
+  }
+
+  .add-free-icon-button,.reset-button {
+
+    font-size: 11px;
+    padding: 10px 12px;
+    border-radius: 18px;
+
+  }
+
+  .add-free-icon-button {
+
+    top: auto;
+    left: 12px;
+    right: auto;
+    bottom: 12px;
+
+  }
+
+  .reset-button {
+
+    right: 12px;
+    bottom: 12px;
+
+  }
+
+  .icon-picker-panel {
+
+    width: 96vw;
+    max-height: 90dvh;
+    border-radius: 18px;
+
+  }
+
+  .icon-picker-header {
+
+    padding: 14px 16px 12px;
+
+  }
+
+  .icon-picker-header strong {
+
+    font-size: 16px;
+
+  }
+
+  .icon-picker-header small {
+
+    font-size: 11px;
+
+  }
+
+  .icon-picker-grid {
+
+    grid-template-columns: repeat(4,minmax(64px,1fr));
+    gap: 8px;
+    padding: 12px 12px 18px;
+    max-height: calc(90dvh - 68px);
+
+  }
+
+  .icon-choice {
+
+    min-height: 70px;
+    font-size: 10px;
+    border-radius: 13px;
+
+  }
+
+  .icon-choice-glyph {
+
+    font-size: 25px;
+
+  }
+
+  .free-icon-resize {
+
+    width: 20px;
+    height: 20px;
+    right: -9px;
+    bottom: -9px;
+
+  }
+
+  .free-icon-delete {
+
+    width: 24px;
+    height: 24px;
+    right: -10px;
+    top: -10px;
+    font-size: 16px;
+    line-height: 20px;
+
+  }
+
+  .free-icon-rotate {
+
+    width: 24px;
+    height: 24px;
+    top: -30px;
+    font-size: 15px;
+
+  }
+
+  .free-icon-flip {
+
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+
+  }
+
+  .free-icon-flip-h {
+
+    left: -13px;
+
+  }
+
+  .free-icon-flip-v {
+
+    right: -13px;
+
+  }
+
+}
+
+@media (max-width: 560px) {
+
+  .centre {
+
+    width: 150px;
+    min-height: 88px;
+
+  }
+
+  .centre textarea {
+
+    font-size: 14px;
+    width: 82%;
+
+  }
+
+  .add-main-button {
+
+    font-size: 8px;
+    padding: 4px 7px;
+    bottom: 6px;
+
+  }
+
+  .branch-text.main {
+
+    font-size: 11.5px;
+    stroke-width: 3.1px;
+
+  }
+
+  .branch-text.child {
+
+    font-size: 9.2px;
+    stroke-width: 2.5px;
+
+  }
+
+  .branch-text.grandchild {
+
+    font-size: 8px;
+    stroke-width: 2px;
+
+  }
+
+  .dot-button,.color-button {
+
+    width: 31px;
+    height: 31px;
+    font-size: 15px;
+
+  }
+
+  .child-control-group .dot-button {
+
+    width: 29px;
+    height: 29px;
+    font-size: 14px;
+
+  }
+
+  .branch-editor {
+
+    width: min(300px,90vw);
+    font-size: 15px;
+
+  }
+
+  .icon-picker-grid {
+
+    grid-template-columns: repeat(3,minmax(70px,1fr));
+
+  }
+
+}
+
+/* Correctif Safari définitif : les images libres sont dessinées dans un canvas,
+   jamais dans un élément image sélectionnable. */
+
+.free-icon-canvas {
+
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none !important;
+  touch-action: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  outline: none !important;
+  transform-origin: 50% 50%;
+
+}
+
+.free-icon-canvas::selection {
+
+  background: transparent !important;
+
+}
+
+.free-icon-item {
+
+  background: transparent !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+/* Détourage du fond des images libres */
+
+.free-icon-bg-toggle {
+
+  position: absolute;
+  left: 50%;
+  bottom: -31px;
+  transform: translateX(-50%);
+  width: 25px;
+  height: 25px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #526a74;
+  box-shadow: 0 2px 7px rgba(0,0,0,.18);
+  font: 900 13px/1 Arial,sans-serif;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .12s ease,background .12s ease,color .12s ease;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+
+}
+
+.free-icon-bg-toggle.active {
+
+  background: #24b8c7;
+  color: #fff;
+
+}
+
+.free-icon-item:hover .free-icon-bg-toggle,
+.free-icon-item.active .free-icon-bg-toggle {
+
+  opacity: 1;
+
+}
+
+@media (max-width:820px) {
+
+  .free-icon-bg-toggle {
+
+    width: 28px;
+    height: 28px;
+    bottom: -34px;
+    font-size: 14px;
+
+  }
+
+}
+
+/* Correctif sélection bleue : la carte n'est jamais sélectionnable comme du contenu natif. */
+
+#mindmap,
+#mindmap * {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+#mindmap::selection,
+#mindmap *::selection {
+
+  background: transparent !important;
+  color: inherit !important;
+
+}
+
+/* Les zones d'édition restent sélectionnables normalement. */
+
+#centreInput,
+.branch-editor,
+.internet-icon-input,
+input[type="text"],
+input[type="search"],
+textarea {
+
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+
+}
+
+.free-icon-item,
+.free-icon-canvas,
+.free-icon-glyph,
+#freeIconLayer {
+
+  outline: none !important;
+  background-color: transparent !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+
+}
+
+body.image-manipulation-active,
+body.image-manipulation-active * {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+/* Correctif plus robuste du bug de voile/selection pendant le redimensionnement */
+
+.free-icon-item.resizing {
+
+  outline: 2px dashed rgba(36,184,199,.95) !important;
+  outline-offset: 4px;
+  background: transparent !important;
+  box-shadow: none !important;
+
+}
+
+.free-icon-item.resizing .free-icon-canvas,
+.free-icon-item.resizing .free-icon-glyph,
+.free-icon-item.resizing .free-icon-image {
+
+  visibility: hidden !important;
+  opacity: 0 !important;
+
+}
+
+.free-icon-item.resizing .free-icon-delete,
+.free-icon-item.resizing .free-icon-rotate,
+.free-icon-item.resizing .free-icon-flip,
+.free-icon-item.resizing .free-icon-bg-toggle {
+
+  opacity: 0 !important;
+  pointer-events: none !important;
+
+}
+
+body.dragging-free-icon .free-icon-item.resizing,
+body.image-manipulation-active .free-icon-item.resizing {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+/* Les icônes libres restent en arrière-plan par rapport aux branches, idées, sous-idées et au centre. */
+
+.free-icon-item {
+
+  z-index: 0;
+
+}
+
+#connections {
+
+  z-index: 10;
+
+}
+
+/* Correctifs arrière-plan et redimensionnement des images libres */
+
+.free-icon-item {
+
+  z-index: 0;
+
+}
+
+.free-icon-item.resizing {
+
+  outline: 2px dashed rgba(36,184,199,.95) !important;
+  outline-offset: 4px;
+  box-shadow: none !important;
+  background: transparent !important;
+
+}
+
+.free-icon-item.resizing .free-icon-canvas,
+.free-icon-item.resizing .free-icon-glyph,
+.free-icon-item.resizing .free-icon-image {
+
+  opacity: 0 !important;
+  visibility: hidden !important;
+
+}
+
+.free-icon-item.resizing .free-icon-delete,
+.free-icon-item.resizing .free-icon-rotate,
+.free-icon-item.resizing .free-icon-flip,
+.free-icon-item.resizing .free-icon-bg-toggle {
+
+  opacity: 0 !important;
+  pointer-events: none !important;
+
+}
+
+.free-icon-canvas,.free-icon-glyph,.free-icon-image {
+
+  pointer-events: none !important;
+  -webkit-user-drag: none !important;
+
+}
+
+body.dragging-free-icon {
+
+  cursor: nwse-resize !important;
+
+}
+
+/* ===== Hiérarchie de calques définitive ===== */
+
+#mindmap {
+
+  isolation: isolate !important;
+
+}
+
+#freeIconLayer {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+
+}
+
+.free-icon-item {
+
+  z-index: 1 !important;
+  pointer-events: auto !important;
+
+}
+
+#connections {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 50 !important;
+  pointer-events: none !important;
+
+}
+
+.centre {
+
+  z-index: 80 !important;
+
+}
+
+#branchControlsLayer {
+
+  z-index: 120 !important;
+
+}
+
+#editorLayer {
+
+  z-index: 200 !important;
+
+}
+
+.add-free-icon-button,.reset-button {
+
+  z-index: 220 !important;
+
+}
+
+.icon-picker {
+
+  z-index: 1000 !important;
+
+}
+
+/* Redimensionnement : aucun calque plein écran, aucune sélection visuelle Safari */
+
+.free-icon-item,.free-icon-item * {
+
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+
+}
+
+.free-icon-resize {
+
+  touch-action: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+
+}
+
+body.resizing-free-icon,body.resizing-free-icon * {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+.free-icon-item.resizing {
+
+  outline: 2px dashed rgba(36,184,199,.95) !important;
+  outline-offset: 4px;
+  background: transparent !important;
+  box-shadow: none !important;
+
+}
+
+/* L'image reste visible pendant le redimensionnement : pas de disparition, pas de voile. */
+
+.free-icon-item.resizing .free-icon-canvas,
+.free-icon-item.resizing .free-icon-glyph,
+.free-icon-item.resizing .free-icon-image {
+
+  opacity: 1 !important;
+  visibility: visible !important;
+
+}
+
+/* ===== V4 : images réellement en arrière-plan ===== */
+
+#mindmap {
+
+  isolation: isolate !important;
+  z-index: 0 !important;
+  background: radial-gradient(circle at 50% 48%,#fff 0 42%,#fffefa 74%,#f4f0e8 100%) !important;
+
+}
+
+#freeIconLayer {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -10 !important;
+  pointer-events: none !important;
+
+}
+
+.free-icon-item {
+
+  z-index: 0 !important;
+  pointer-events: auto !important;
+
+}
+
+#connections {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 10 !important;
+  pointer-events: none !important;
+
+}
+
+#connections .branch-hit,
+#connections .branch-text,
+#connections .main-drag-handle,
+#connections .node-drag-handle,
+#connections .branch-icon {
+
+  pointer-events: auto !important;
+
+}
+
+.centre {
+
+  z-index: 30 !important;
+
+}
+
+#branchControlsLayer {
+
+  z-index: 70 !important;
+
+}
+
+#editorLayer {
+
+  z-index: 200 !important;
+
+}
+
+.add-free-icon-button,.reset-button {
+
+  z-index: 220 !important;
+
+}
+
+.icon-picker {
+
+  z-index: 1000 !important;
+
+}
+
+/* Redimensionnement V4 : l'image reste totalement immobile pendant le geste. */
+
+.free-icon-resize-preview {
+
+  position: absolute;
+  display: none;
+  z-index: 300;
+  pointer-events: none;
+  border: 2px dashed #24b8c7;
+  border-radius: 10px;
+  background: transparent;
+  transform: translate(-50%,-50%);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.85);
+
+}
+
+.free-icon-resize-preview.visible {
+
+  display: block;
+
+}
+
+body.preview-resize-active,body.preview-resize-active * {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+body.preview-resize-active {
+
+  cursor: nwse-resize !important;
+
+}
+
+/* On annule les anciens styles qui masquaient l'image pendant le redimensionnement. */
+
+.free-icon-item.resizing .free-icon-canvas,
+.free-icon-item.resizing .free-icon-glyph,
+.free-icon-item.resizing .free-icon-image {
+
+  opacity: 1 !important;
+  visibility: visible !important;
+
+}
+
+.free-icon-item.resizing {
+
+  outline: none !important;
+  box-shadow: none !important;
+
+}
+
+/* ===== Correctif final strict : icônes au dernier plan + redimensionnement sans voile ===== */
+
+#mindmap {
+
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+
+}
+
+#mindmap > #freeIconLayer {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+
+}
+
+#mindmap > #connections {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 100 !important;
+  pointer-events: none !important;
+
+}
+
+#mindmap > .centre {
+
+  z-index: 150 !important;
+
+}
+
+#mindmap > #branchControlsLayer {
+
+  z-index: 220 !important;
+
+}
+
+#mindmap > #editorLayer {
+
+  z-index: 300 !important;
+
+}
+
+#mindmap > .add-free-icon-button,
+#mindmap > .reset-button {
+
+  z-index: 320 !important;
+
+}
+
+#mindmap > #freeIconResizePreview {
+
+  z-index: 310 !important;
+
+}
+
+/* Les visuels des icônes restent derrière toute la carte */
+
+.free-icon-item {
+
+  z-index: 0 !important;
+  pointer-events: auto !important;
+  isolation: isolate !important;
+
+}
+
+.free-icon-canvas,.free-icon-glyph,.free-icon-image {
+
+  pointer-events: none !important;
+  -webkit-user-drag: none !important;
+  user-select: none !important;
+
+}
+
+/* Pendant le redimensionnement : on masque le visuel source et on n'affiche qu'un cadre de prévisualisation */
+
+.free-icon-item.resizing .free-icon-canvas,
+.free-icon-item.resizing .free-icon-glyph,
+.free-icon-item.resizing .free-icon-image {
+
+  visibility: hidden !important;
+  opacity: 0 !important;
+
+}
+
+.free-icon-item.resizing {
+
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+
+}
+
+body.preview-resize-active,
+body.preview-resize-active * {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+body.preview-resize-active {
+
+  cursor: nwse-resize !important;
+
+}
+
+.free-icon-resize-preview {
+
+  position: absolute !important;
+  display: none !important;
+  transform: translate(-50%,-50%) !important;
+  background: transparent !important;
+  border: 2px dashed #24b8c7 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.9) !important;
+  pointer-events: none !important;
+
+}
+
+.free-icon-resize-preview.visible {
+
+  display: block !important;
+
+}
+
+/* ===== Correctif final propre pour les icônes libres ===== */
+
+html,body,#mindmap {
+
+  -webkit-user-select: none;
+  user-select: none;
+
+}
+
+#centre textarea,.branch-editor {
+
+  -webkit-user-select: text;
+  user-select: text;
+
+}
+
+#mindmap {
+
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+
+}
+
+#mindmap > #freeIconLayer {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+
+}
+
+#mindmap > #connections {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 100 !important;
+  pointer-events: none !important;
+
+}
+
+#mindmap > .centre {
+
+  z-index: 150 !important;
+
+}
+
+#mindmap > #branchControlsLayer {
+
+  z-index: 220 !important;
+
+}
+
+#mindmap > #freeIconOverlayLayer {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 260 !important;
+  pointer-events: none !important;
+
+}
+
+#mindmap > #freeIconResizePreview {
+
+  z-index: 270 !important;
+
+}
+
+#mindmap > #editorLayer {
+
+  z-index: 300 !important;
+
+}
+
+#mindmap > .add-free-icon-button,#mindmap > .reset-button {
+
+  z-index: 320 !important;
+
+}
+
+.free-icon-visual {
+
+  position: absolute;
+  transform: translate(-50%,-50%);
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.10));
+  pointer-events: auto;
+  touch-action: none;
+  cursor: move;
+
+}
+
+.free-icon-visual,.free-icon-visual * {
+
+  -webkit-user-drag: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+
+}
+
+.free-icon-overlay {
+
+  position: absolute;
+  transform: translate(-50%,-50%);
+  pointer-events: none;
+
+}
+
+.free-icon-select-frame {
+
+  position: absolute;
+  inset: 0;
+  border: 2px dashed rgba(36,184,199,.95);
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.92);
+  opacity: 0;
+  transition: opacity .12s ease;
+
+}
+
+.free-icon-overlay.active .free-icon-select-frame {
+
+  opacity: 1;
+
+}
+
+.free-icon-handle,
+.free-icon-overlay .free-icon-delete,
+.free-icon-overlay .free-icon-rotate,
+.free-icon-overlay .free-icon-flip,
+.free-icon-overlay .free-icon-bg-toggle,
+.free-icon-overlay .free-icon-resize {
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease;
+
+}
+
+.free-icon-overlay.active .free-icon-handle,
+.free-icon-overlay.active .free-icon-delete,
+.free-icon-overlay.active .free-icon-rotate,
+.free-icon-overlay.active .free-icon-flip,
+.free-icon-overlay.active .free-icon-bg-toggle,
+.free-icon-overlay.active .free-icon-resize {
+
+  opacity: 1;
+  pointer-events: auto;
+
+}
+
+.free-icon-move {
+
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 0;
+  background: #fff;
+  color: #275464;
+  box-shadow: 0 2px 7px rgba(0,0,0,.18);
+  font: 900 15px/24px Arial,sans-serif;
+  cursor: move;
+  padding: 0;
+
+}
+
+.free-icon-resize-preview {
+
+  position: absolute;
+  display: none;
+  transform: translate(-50%,-50%);
+  background: transparent;
+  border: 2px dashed #24b8c7;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.92);
+  pointer-events: none;
+
+}
+
+.free-icon-resize-preview.visible {
+
+  display: block;
+
+}
+
+/* ===== FIX SAFARI : aucune sélection de texte pendant manipulation d'icône ===== */
+
+#connections,
+#connections *,
+#connections text,
+#connections textPath,
+.branch-text,
+.branch-icon,
+.branch-icon-glyph {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+html.free-icon-manipulation,
+html.free-icon-manipulation body,
+html.free-icon-manipulation #mindmap,
+html.free-icon-manipulation #mindmap * {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+html.free-icon-manipulation textarea,
+html.free-icon-manipulation input,
+html.free-icon-manipulation .branch-editor {
+
+  pointer-events: none !important;
+
+}
+
+/* hiérarchie stricte : visuels libres sous TOUT le dessin de la carte */
+
+#mindmap {
+
+  isolation: isolate !important;
+  position: relative !important;
+  z-index: 0 !important;
+
+}
+
+#mindmap > #freeIconLayer {
+
+  z-index: 1 !important;
+
+}
+
+#mindmap > #connections {
+
+  z-index: 100 !important;
+
+}
+
+#mindmap > .centre {
+
+  z-index: 150 !important;
+
+}
+
+#mindmap > #branchControlsLayer {
+
+  z-index: 220 !important;
+
+}
+
+#mindmap > #freeIconOverlayLayer {
+
+  z-index: 260 !important;
+
+}
+
+#mindmap > #freeIconResizePreview {
+
+  z-index: 270 !important;
+
+}
+
+#mindmap > #editorLayer {
+
+  z-index: 300 !important;
+
+}
+
+/* le visuel seul reste derrière ; seuls les contrôles flottants passent devant */
+
+.free-icon-visual {
+
+  z-index: 1 !important;
+
+}
+
+.free-icon-overlay {
+
+  z-index: 1 !important;
+
+}
+
+/* ===== Patch Safari V3 : suppression de la sélection parasite + icônes derrière la carte ===== */
+
+#mindmap {
+
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+
+}
+
+#mindmap > #freeIconLayer {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+
+}
+
+#mindmap > #connections {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 100 !important;
+  pointer-events: none !important;
+
+}
+
+#mindmap > .centre {
+
+  z-index: 150 !important;
+
+}
+
+#mindmap > #branchControlsLayer {
+
+  z-index: 220 !important;
+
+}
+
+#mindmap > #freeIconOverlayLayer {
+
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 260 !important;
+  pointer-events: none !important;
+
+}
+
+#mindmap > #freeIconResizePreview {
+
+  position: absolute !important;
+  z-index: 280 !important;
+
+}
+
+#mindmap > #editorLayer {
+
+  z-index: 300 !important;
+
+}
+
+#mindmap > .add-free-icon-button,
+#mindmap > .reset-button {
+
+  z-index: 320 !important;
+
+}
+
+.free-icon-visual {
+
+  z-index: 0 !important;
+  pointer-events: auto !important;
+
+}
+
+.free-icon-overlay {
+
+  z-index: 1 !important;
+  pointer-events: none !important;
+
+}
+
+.free-icon-overlay.active .free-icon-handle,
+.free-icon-overlay.active .free-icon-delete,
+.free-icon-overlay.active .free-icon-rotate,
+.free-icon-overlay.active .free-icon-flip,
+.free-icon-overlay.active .free-icon-bg-toggle,
+.free-icon-overlay.active .free-icon-resize {
+
+  pointer-events: auto !important;
+
+}
+
+/* Empêcher la sélection native Safari pendant la manipulation des icônes */
+
+html.free-icon-manipulation,
+html.free-icon-manipulation body,
+html.free-icon-manipulation #mindmap,
+html.free-icon-manipulation #connections,
+html.free-icon-manipulation #connections *,
+html.free-icon-manipulation .branch-text,
+html.free-icon-manipulation .branch-text *,
+html.free-icon-manipulation .branch-hit,
+html.free-icon-manipulation .node-drag-handle,
+html.free-icon-manipulation .main-drag-handle {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+}
+
+html.free-icon-manipulation ::selection {
+
+  background: transparent !important;
+  color: inherit !important;
+
+}
+
+#connections,
+#connections *,
+#connections text,
+#connections textPath,
+.branch-text,
+.branch-text * {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+
+}
+
+.free-icon-canvas, .free-icon-glyph, .free-icon-visual img {
+
+  -webkit-user-drag: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+
+}
+
+/* ===== V5 : icônes rendues dans un canvas d'arrière-plan ===== */
+
+#mindmap {
+
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+
+}
+
+#mindmap > #freeIconLayer {
+
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 1 !important;
+  pointer-events: auto !important;
+  background: transparent !important;
+  display: block !important;
+
+}
+
+#mindmap > #connections {
+
+  z-index: 100 !important;
+
+}
+
+#mindmap > .centre {
+
+  z-index: 150 !important;
+
+}
+
+#mindmap > #branchControlsLayer {
+
+  z-index: 220 !important;
+
+}
+
+#mindmap > #freeIconOverlayLayer {
+
+  z-index: 260 !important;
+  pointer-events: none !important;
+
+}
+
+#mindmap > #freeIconResizePreview {
+
+  z-index: 270 !important;
+
+}
+
+#mindmap > #editorLayer {
+
+  z-index: 300 !important;
+
+}
+
+#mindmap > .add-free-icon-button,#mindmap > .reset-button {
+
+  z-index: 320 !important;
+
+}
+
+.free-icon-overlay {
+
+  position: absolute;
+  transform: translate(-50%,-50%);
+  pointer-events: none !important;
+
+}
+
+.free-icon-overlay.active .free-icon-delete,
+.free-icon-overlay.active .free-icon-rotate,
+.free-icon-overlay.active .free-icon-flip,
+.free-icon-overlay.active .free-icon-bg-toggle,
+.free-icon-overlay.active .free-icon-resize,
+.free-icon-overlay.active .free-icon-move {
+
+  pointer-events: auto !important;
+  opacity: 1 !important;
+
+}
+
+html.free-icon-manipulation,
+html.free-icon-manipulation body,
+html.free-icon-manipulation #mindmap,
+html.free-icon-manipulation #connections,
+html.free-icon-manipulation #connections * {
+
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+
+}
+
+/* V6 - sécurité interaction : le bouton central passe toujours au-dessus du canvas */
+
+#mindmap > #freeIconLayer {
+
+  pointer-events: none !important;
+  z-index: 1 !important;
+
+}
+
+#mindmap > #connections {
+
+  z-index: 100 !important;
+
+}
+
+#mindmap > .centre {
+
+  z-index: 180 !important;
+  pointer-events: auto !important;
+
+}
+
+#addBranch {
+
+  position: absolute !important;
+  z-index: 190 !important;
+  pointer-events: auto !important;
+
+}
+
+/* ===== V9 : zone interactive transparente des icônes ===== */
+
+#mindmap > #freeIconLayer {
+
+  z-index: 1 !important;
+  pointer-events: none !important;
+
+}
+
+#mindmap > #connections {
+
+  z-index: 100 !important;
+
+}
+
+#mindmap > .centre {
+
+  z-index: 180 !important;
+
+}
+
+#mindmap > #branchControlsLayer {
+
+  z-index: 220 !important;
+
+}
+
+#mindmap > #freeIconOverlayLayer {
+
+  z-index: 260 !important;
+  pointer-events: none !important;
+
+}
+
+#mindmap > #freeIconResizePreview {
+
+  z-index: 270 !important;
+
+}
+
+#mindmap > #editorLayer {
+
+  z-index: 300 !important;
+
+}
+
+.free-icon-overlay {
+
+  pointer-events: none !important;
+
+}
+
+.free-icon-hit {
+
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: move;
+  pointer-events: auto !important;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+
+}
+
+.free-icon-overlay.active .free-icon-hit {
+
+  cursor: move;
+
+}
+
+.free-icon-select-frame {
+
+  pointer-events: none !important;
+
+}
+
+.free-icon-overlay .free-icon-delete,
+.free-icon-overlay .free-icon-rotate,
+.free-icon-overlay .free-icon-flip,
+.free-icon-overlay .free-icon-bg-toggle,
+.free-icon-overlay .free-icon-resize,
+.free-icon-overlay .free-icon-move {
+
+  z-index: 5;
+
+}
+
+/* V10 : la poignée de déplacement reste toujours libre du menu de branche */
+
+.main-drag-handle,.node-drag-handle {
+
+  pointer-events: auto !important;
+  cursor: grab !important;
+
+}
+
+body.dragging-branch .control-group,
+body.dragging-branch .child-control-group {
+
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+
+}
+
+/* Recherche d'icônes en français */
+
+.internet-icon-input {
+
+  font-size: 13px !important;
+
+}
+
+.internet-icon-status {
+
+  line-height: 1.3 !important;
+
+}
+
+/* ===== V11 : léger relief global ===== */
+
+:root {
+
+  --relief-shadow-soft: 0 6px 18px rgba(20,58,74,.10);
+  --relief-shadow-mid: 0 10px 24px rgba(20,58,74,.14);
+  --relief-shadow-strong: 0 14px 34px rgba(20,58,74,.18);
+
+}
+
+body {
+
+  background: radial-gradient(circle at 50% 48%, #ffffff 0 42%, #fffefa 74%, #f4f0e8 100%),
+    linear-gradient(180deg, rgba(255,255,255,.55), rgba(244,240,232,.25));
+
+}
+
+#connections {
+
+  filter: drop-shadow(0 1px 1px rgba(255,255,255,.60)) drop-shadow(0 2px 4px rgba(18,60,74,.05));
+
+}
+
+.centre {
+
+  background: linear-gradient(180deg, #ffffff 0%, #fbffff 62%, #f4fdff 100%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.92),
+    inset 0 -5px 10px rgba(36,184,199,.06),
+    0 10px 26px rgba(21,83,97,.14),
+    0 2px 0 rgba(255,255,255,.8);
+
+}
+
+.centre::before {
+
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at 35% 25%, rgba(255,255,255,.58), transparent 42%);
+  mix-blend-mode: screen;
+
+}
+
+.centre textarea {
+
+  text-shadow: 0 1px 0 rgba(255,255,255,.92);
+
+}
+
+.add-main-button,
+.add-free-icon-button,
+.reset-button,
+.internet-icon-button,
+.icon-picker-close,
+.external-icon-upload,
+.icon-choice,
+.dot-button,
+.color-button,
+.branch-editor,
+.branch-icon image,
+.branch-icon circle,
+.free-icon-resize,
+.free-icon-delete,
+.free-icon-rotate,
+.free-icon-flip {
+
+  box-shadow: var(--relief-shadow-soft);
+
+}
+
+.add-main-button {
+
+  background: linear-gradient(180deg, #39c6d2 0%, #22b6c6 58%, #19a6b8 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.34),
+    0 5px 14px rgba(17,98,110,.22);
+
+}
+
+.add-free-icon-button,
+.reset-button,
+.internet-icon-button,
+.icon-picker-close,
+.dot-button,
+.color-button,
+.free-icon-delete,
+.free-icon-rotate,
+.free-icon-flip {
+
+  background-image: linear-gradient(180deg, rgba(255,255,255,.98), rgba(243,248,250,.96));
+
+}
+
+.add-free-icon-button,
+.reset-button {
+
+  border: 1px solid rgba(33,82,98,.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75),
+    0 8px 18px rgba(20,58,74,.14);
+
+}
+
+.reset-button {
+
+  background-image: linear-gradient(180deg, rgba(255,255,255,.97), rgba(247,250,251,.94));
+
+}
+
+.dot-button,.color-button {
+
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.88),
+    0 4px 11px rgba(0,0,0,.14);
+
+}
+
+.branch-editor {
+
+  background: linear-gradient(180deg, #ffffff 0%, #f9fcfd 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.78),
+    0 10px 24px rgba(0,0,0,.16);
+
+}
+
+.branch-text {
+
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,.95)) drop-shadow(0 2px 3px rgba(20,58,74,.07));
+
+}
+
+.main-line,
+.child-line,
+.grandchild-line {
+
+  filter: drop-shadow(0 1px 1px rgba(255,255,255,.50)) drop-shadow(0 2px 4px rgba(18,60,74,.06));
+
+}
+
+.main-drag-handle,
+.node-drag-handle {
+
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.16));
+
+}
+
+.icon-picker-panel {
+
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,252,253,.98));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.92),
+    0 28px 70px rgba(0,0,0,.23);
+
+}
+
+.icon-picker-header {
+
+  background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(247,251,252,.96));
+
+}
+
+.icon-choice,
+.external-icon-upload,
+.internet-icon-search,
+.internet-icon-result {
+
+  background: linear-gradient(180deg, rgba(255,255,255,.99), rgba(246,250,251,.97));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.86),
+    0 4px 12px rgba(20,58,74,.07);
+
+}
+
+.internet-icon-input {
+
+  background: linear-gradient(180deg, #ffffff 0%, #fbfeff 100%);
+  box-shadow: inset 0 1px 2px rgba(20,58,74,.05);
+
+}
+
+.free-icon-resize,
+.free-icon-rotate {
+
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.34),
+    0 4px 10px rgba(0,0,0,.22);
+
+}
+
+.free-icon-delete,
+.free-icon-flip {
+
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.86),
+    0 4px 10px rgba(0,0,0,.18);
+
+}
+
+/* Relief léger des menus et contrôles */
+
+.control-group,
+.child-control-group {
+
+  filter: drop-shadow(0 3px 8px rgba(20,58,74,.06));
+
+}
+
+@media (max-width:850px) {
+
+  .centre {
+
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.90),
+      inset 0 -4px 8px rgba(36,184,199,.05),
+      0 8px 20px rgba(21,83,97,.12);
+
+  }
+
+  .add-free-icon-button,
+  .reset-button {
+
+    box-shadow: 0 7px 16px rgba(20,58,74,.13);
+
+  }
+
+}
+
+/* ===== V12 : relief renforcé sur branches, nouvelles idées et sous-idées ===== */
+
+.main-line,
+.child-line,
+.grandchild-line {
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,.72))
+    drop-shadow(0 3px 6px rgba(15,58,72,.12))
+    drop-shadow(0 7px 14px rgba(15,58,72,.08));
+
+}
+
+.branch-text {
+
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,.98))
+    drop-shadow(0 2px 4px rgba(20,58,74,.10))
+    drop-shadow(0 6px 10px rgba(20,58,74,.06));
+
+}
+
+.branch-text.main {
+
+  letter-spacing: .2px;
+
+}
+
+.branch-text.child,
+.branch-text.grandchild {
+
+  paint-order: stroke;
+  stroke: rgba(255,255,255,.99);
+
+}
+
+/* Petit effet de relief aussi sur les points/poignées des idées */
+
+.node-drag-handle,
+.main-drag-handle {
+
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,.85))
+    drop-shadow(0 3px 6px rgba(0,0,0,.18));
+
+}
+
+/* Relief léger sur les petits repères au bout des idées */
+
+#connections circle {
+
+  filter: drop-shadow(0 1px 2px rgba(20,58,74,.12));
+
+}
+
+
+/* ============================================================
+   V14 — PROFONDEUR DES ICÔNES + PRIORITÉ ABSOLUE AUX BRANCHES
+   ============================================================ */
+
+/* Icônes "arrière" : sous les branches. */
+#mindmap > #freeIconLayer {
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+/* Les branches restent le calque interactif prioritaire. */
+#mindmap > #connections {
+  z-index: 100 !important;
+  pointer-events: none !important;
+}
+
+/* Icônes "avant" : visuellement devant les branches, mais jamais interactives
+   elles-mêmes. Elles ne peuvent donc pas bloquer une branche à la souris. */
+#mindmap > #freeIconFrontLayer {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  background: transparent !important;
+  z-index: 110 !important;
+  pointer-events: none !important;
+}
+
+/* La zone de manipulation d'une icône reste SOUS le SVG des branches.
+   Hors d'une branche elle fonctionne normalement ; sur une branche,
+   la branche gagne systématiquement le hit-test. */
+#mindmap > #freeIconOverlayLayer {
+  z-index: 90 !important;
+  pointer-events: none !important;
+}
+
+.free-icon-layer-toggle {
+  position: absolute;
+  right: -15px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 27px;
+  height: 27px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #275464;
+  box-shadow: 0 3px 9px rgba(0,0,0,.18);
+  font: 900 17px/27px Arial,sans-serif;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease, transform .12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.free-icon-overlay.active .free-icon-layer-toggle {
+  opacity: 1;
+  pointer-events: auto !important;
+}
+
+.free-icon-layer-toggle:hover {
+  transform: translateY(-50%) scale(1.08);
+}
+
+@media (max-width:820px) {
+  .free-icon-layer-toggle {
+    right: -17px;
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+    line-height: 30px;
+  }
+}
+
+/* ============================================================
+   V15 — lisibilite du texte courbe + bouton de calque colore
+   ============================================================ */
+
+/* Une sans-serif ronde et reguliere reste lisible lorsque chaque glyphe pivote
+   le long d'une courbe. Les fontes emoji restent disponibles pour les icones. */
+.branch-text {
+  font-family: "Trebuchet MS","Avenir Next","Segoe UI","Apple Color Emoji","Segoe UI Emoji",sans-serif !important;
+  font-kerning: normal;
+  font-variant-ligatures: none;
+  letter-spacing: .012em;
+  text-rendering: geometricPrecision;
+}
+
+.branch-text.main {
+  letter-spacing: .006em;
+}
+
+.branch-text.child,
+.branch-text.grandchild {
+  letter-spacing: .016em;
+}
+
+/* Le bouton avant/arriere est volontairement plus visible. Sa couleur est
+   fournie par JS d'apres la branche la plus proche de l'icone selectionnee. */
+.free-icon-overlay {
+  --icon-accent: #24b8c7;
+}
+
+.free-icon-layer-toggle {
+  background: var(--icon-accent) !important;
+  color: #fff !important;
+  border: 2px solid rgba(255,255,255,.96) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--icon-accent) 72%, #173a51 28%),
+              0 4px 12px rgba(0,0,0,.28) !important;
+  font-weight: 900 !important;
+}
+
+.free-icon-layer-toggle:hover,
+.free-icon-layer-toggle:focus-visible {
+  filter: brightness(.93) saturate(1.12);
+  outline: none;
+}
+
+/* Repli pour Safari plus ancien si color-mix n'est pas pris en charge. */
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .free-icon-layer-toggle {
+    box-shadow: 0 0 0 2px rgba(23,58,81,.45),0 4px 12px rgba(0,0,0,.28) !important;
+  }
+}
+
+
+/* ============================================================
+   V17 — icônes : rotation plus visible + bouton calque déplacé
+   ============================================================ */
+
+/* Bouton rotation : plus grand, plus contrasté et réellement visible. */
+.free-icon-overlay .free-icon-rotate {
+  left: 50% !important;
+  top: -36px !important;
+  transform: translateX(-50%) !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+  border: 2px solid rgba(255,255,255,.98) !important;
+  background: linear-gradient(180deg, #35c7d5 0%, #1eb2c3 100%) !important;
+  background-image: linear-gradient(180deg, #35c7d5 0%, #1eb2c3 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 1px rgba(16,75,89,.18), 0 6px 14px rgba(0,0,0,.24) !important;
+  font: 900 18px/30px Arial,sans-serif !important;
+  text-align: center !important;
+  cursor: grab !important;
+  z-index: 4 !important;
+}
+
+body.dragging-free-icon .free-icon-overlay .free-icon-rotate {
+  cursor: grabbing !important;
+}
+
+.free-icon-overlay.active .free-icon-rotate:hover,
+.free-icon-overlay.active .free-icon-rotate:focus-visible {
+  filter: brightness(.95) saturate(1.08);
+  outline: none;
+}
+
+/* Bouton avant/arrière : déplacé en bas à gauche pour ne plus chevaucher
+   le miroir vertical situé à droite. */
+.free-icon-layer-toggle {
+  left: -16px !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: -16px !important;
+  transform: none !important;
+  width: 29px !important;
+  height: 29px !important;
+  line-height: 29px !important;
+  z-index: 3 !important;
+}
+
+.free-icon-layer-toggle:hover,
+.free-icon-layer-toggle:focus-visible {
+  transform: scale(1.08) !important;
+}
+
+@media (max-width:820px) {
+  .free-icon-overlay .free-icon-rotate {
+    top: -38px !important;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 19px !important;
+    line-height: 32px !important;
+  }
+
+  .free-icon-layer-toggle {
+    left: -18px !important;
+    bottom: -18px !important;
+    width: 31px !important;
+    height: 31px !important;
+    font-size: 18px !important;
+    line-height: 31px !important;
+  }
+}
+
+
+/* ============================================================
+   V18 — tailles normalisées + couleurs conservées
+   ============================================================ */
+
+/* Bouton rotation : même encombrement que les autres contrôles,
+   mais avec une couleur visible. */
+.free-icon-overlay .free-icon-rotate {
+  width: 24px !important;
+  height: 24px !important;
+  top: -30px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  border-radius: 50% !important;
+  border: 2px solid rgba(255,255,255,.98) !important;
+  background: linear-gradient(180deg, #35c7d5 0%, #1eb2c3 100%) !important;
+  background-image: linear-gradient(180deg, #35c7d5 0%, #1eb2c3 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 1px rgba(16,75,89,.16), 0 4px 10px rgba(0,0,0,.22) !important;
+  font: 900 15px/24px Arial,sans-serif !important;
+  z-index: 4 !important;
+}
+
+/* Bouton avant/arrière : même taille que les autres, juste recoloré et déplacé. */
+.free-icon-layer-toggle {
+  left: -13px !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: -13px !important;
+  transform: none !important;
+  width: 26px !important;
+  height: 26px !important;
+  line-height: 26px !important;
+  font-size: 16px !important;
+  z-index: 3 !important;
+}
+
+.free-icon-layer-toggle:hover,
+.free-icon-layer-toggle:focus-visible {
+  transform: scale(1.08) !important;
+}
+
+/* Bouton ajouter dans le menu des branches / courbes :
+   garder la couleur, mais revenir à une taille visuelle standard. */
+.add-button {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+.child-control-group .add-button {
+  font-size: 14px !important;
+}
+
+@media (max-width:820px) {
+  .free-icon-overlay .free-icon-rotate {
+    width: 24px !important;
+    height: 24px !important;
+    top: -30px !important;
+    font-size: 15px !important;
+    line-height: 24px !important;
+  }
+
+  .free-icon-layer-toggle {
+    left: -14px !important;
+    bottom: -14px !important;
+    width: 27px !important;
+    height: 27px !important;
+    font-size: 16px !important;
+    line-height: 27px !important;
+  }
+}
+
+
+/* ============================================================
+   V19 — + colore comme la branche + interlettrage adaptatif
+   ============================================================ */
+
+.add-button {
+  background: #fff !important;
+  color: var(--branch-color,var(--centre)) !important;
+  border: 2px solid color-mix(in srgb, var(--branch-color,var(--centre)) 82%, #ffffff 18%) !important;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.05), 0 5px 12px rgba(0,0,0,.14) !important;
+  text-shadow: none !important;
+}
+
+.add-button:hover,
+.add-button:focus-visible {
+  filter: brightness(.98) saturate(1.06);
+  outline: none;
+}
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .add-button {
+    border-color: rgba(36,184,199,.42) !important;
+  }
+}
+
+
+/* ============================================================
+   V20 — harmonisation des bulles d'outils des icônes
+   ============================================================ */
+
+/* Toutes les bulles de contrôle d'une icône libre ont désormais
+   exactement le même gabarit visuel pour un rendu propre et cohérent. */
+.free-icon-overlay {
+  --tool-bubble-size: 26px;
+  --tool-bubble-font: 15px;
+}
+
+.free-icon-overlay .free-icon-delete,
+.free-icon-overlay .free-icon-rotate,
+.free-icon-overlay .free-icon-flip,
+.free-icon-overlay .free-icon-layer-toggle,
+.free-icon-overlay .free-icon-move,
+.free-icon-overlay .free-icon-bg-toggle,
+.free-icon-overlay .free-icon-resize {
+  width: var(--tool-bubble-size) !important;
+  height: var(--tool-bubble-size) !important;
+  min-width: var(--tool-bubble-size) !important;
+  min-height: var(--tool-bubble-size) !important;
+  border-radius: 50% !important;
+  display: grid !important;
+  place-items: center !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  border: 2px solid rgba(255,255,255,.96) !important;
+  box-shadow: 0 0 0 1px rgba(24,67,79,.10), 0 4px 10px rgba(0,0,0,.20) !important;
+  font-size: var(--tool-bubble-font) !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+
+/* Bulles claires */
+.free-icon-overlay .free-icon-delete,
+.free-icon-overlay .free-icon-flip,
+.free-icon-overlay .free-icon-move {
+  background: linear-gradient(180deg, rgba(255,255,255,.99), rgba(244,248,250,.97)) !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,.99), rgba(244,248,250,.97)) !important;
+  color: #244b59 !important;
+}
+
+.free-icon-overlay .free-icon-delete {
+  color: #b21f36 !important;
+}
+
+/* Bulles accentuées visibles */
+.free-icon-overlay .free-icon-rotate,
+.free-icon-overlay .free-icon-layer-toggle,
+.free-icon-overlay .free-icon-bg-toggle.active,
+.free-icon-overlay .free-icon-resize {
+  background: linear-gradient(180deg, #35c7d5 0%, #1eb2c3 100%) !important;
+  background-image: linear-gradient(180deg, #35c7d5 0%, #1eb2c3 100%) !important;
+  color: #fff !important;
+}
+
+.free-icon-overlay .free-icon-bg-toggle:not(.active) {
+  background: linear-gradient(180deg, rgba(255,255,255,.99), rgba(244,248,250,.97)) !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,.99), rgba(244,248,250,.97)) !important;
+  color: #4d6670 !important;
+}
+
+/* Positions harmonisées */
+.free-icon-overlay .free-icon-rotate {
+  left: 50% !important;
+  top: calc(var(--tool-bubble-size) * -1.22) !important;
+  transform: translateX(-50%) !important;
+}
+
+.free-icon-overlay .free-icon-delete {
+  right: calc(var(--tool-bubble-size) * -0.46) !important;
+  top: calc(var(--tool-bubble-size) * -0.46) !important;
+}
+
+.free-icon-overlay .free-icon-flip-h {
+  left: calc(var(--tool-bubble-size) * -0.5) !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.free-icon-overlay .free-icon-flip-v {
+  right: calc(var(--tool-bubble-size) * -0.5) !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.free-icon-overlay .free-icon-layer-toggle {
+  left: calc(var(--tool-bubble-size) * -0.54) !important;
+  bottom: calc(var(--tool-bubble-size) * -0.54) !important;
+  right: auto !important;
+  top: auto !important;
+  transform: none !important;
+}
+
+.free-icon-overlay .free-icon-move {
+  left: 50% !important;
+  bottom: calc(var(--tool-bubble-size) * -0.54) !important;
+  transform: translateX(-50%) !important;
+}
+
+.free-icon-overlay .free-icon-bg-toggle {
+  left: 50% !important;
+  bottom: calc(var(--tool-bubble-size) * -1.70) !important;
+  transform: translateX(-50%) !important;
+}
+
+.free-icon-overlay .free-icon-resize {
+  right: calc(var(--tool-bubble-size) * -0.54) !important;
+  bottom: calc(var(--tool-bubble-size) * -0.54) !important;
+}
+
+.free-icon-overlay .free-icon-delete:hover,
+.free-icon-overlay .free-icon-rotate:hover,
+.free-icon-overlay .free-icon-flip:hover,
+.free-icon-overlay .free-icon-layer-toggle:hover,
+.free-icon-overlay .free-icon-move:hover,
+.free-icon-overlay .free-icon-bg-toggle:hover,
+.free-icon-overlay .free-icon-resize:hover,
+.free-icon-overlay .free-icon-delete:focus-visible,
+.free-icon-overlay .free-icon-rotate:focus-visible,
+.free-icon-overlay .free-icon-flip:focus-visible,
+.free-icon-overlay .free-icon-layer-toggle:focus-visible,
+.free-icon-overlay .free-icon-move:focus-visible,
+.free-icon-overlay .free-icon-bg-toggle:focus-visible,
+.free-icon-overlay .free-icon-resize:focus-visible {
+  transform-origin: center center !important;
+  filter: brightness(.97) saturate(1.05);
+  outline: none !important;
+}
+
+.free-icon-overlay .free-icon-rotate:hover,
+.free-icon-overlay .free-icon-rotate:focus-visible {
+  transform: translateX(-50%) scale(1.06) !important;
+}
+
+.free-icon-overlay .free-icon-flip-h:hover,
+.free-icon-overlay .free-icon-flip-h:focus-visible,
+.free-icon-overlay .free-icon-flip-v:hover,
+.free-icon-overlay .free-icon-flip-v:focus-visible {
+  transform: translateY(-50%) scale(1.06) !important;
+}
+
+.free-icon-overlay .free-icon-move:hover,
+.free-icon-overlay .free-icon-move:focus-visible,
+.free-icon-overlay .free-icon-bg-toggle:hover,
+.free-icon-overlay .free-icon-bg-toggle:focus-visible {
+  transform: translateX(-50%) scale(1.06) !important;
+}
+
+.free-icon-overlay .free-icon-layer-toggle:hover,
+.free-icon-overlay .free-icon-layer-toggle:focus-visible,
+.free-icon-overlay .free-icon-delete:hover,
+.free-icon-overlay .free-icon-delete:focus-visible,
+.free-icon-overlay .free-icon-resize:hover,
+.free-icon-overlay .free-icon-resize:focus-visible {
+  transform: scale(1.06) !important;
+}
+
+@media (max-width:820px) {
+  .free-icon-overlay {
+    --tool-bubble-size: 26px;
+    --tool-bubble-font: 15px;
+  }
+}
