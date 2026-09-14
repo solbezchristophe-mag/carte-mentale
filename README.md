@@ -1,25 +1,35 @@
-# Carte mentale — base propre v40
+# Carte mentale interactive — version définitive
 
-Cette version est la nouvelle base de travail. Elle reprend la v39, nettoyée et consolidée.
+Cette version consolide la **v46** en une base propre et stable. Elle est destinée à être la base unique pour les futures évolutions.
 
-## Fichiers
+## Structure
 
-- `index.html` : structure de la page.
-- `css/styles.css` : apparence et responsive iPhone/iPad.
-- `js/app.js` : logique de la carte, branches, idées, sous-idées, icônes, menus et sauvegarde.
+- `index.html` — structure de l’interface.
+- `css/styles.css` — apparence, responsive iPhone/iPad/ordinateur, menus et aperçu PDF.
+- `js/app.js` — logique de la carte : branches, idées, sous-idées, icônes, édition, sauvegarde et export PDF.
 
-## Principes de cette base
+## Fonctionnalités conservées
 
-- Un seul système actif pour l’édition des textes de branches.
-- Une seule définition active du bouton contextuel `+ Ajouter une branche` dans la bulle centrale.
-- Pas de largeur minimale artificielle : la carte s’adapte à la largeur réelle de l’iPhone, de l’iPad et du PC.
-- Les anciennes couches de correctifs v37/v38/v39 ne sont pas conservées séparément : leur comportement utile est intégré directement au code principal.
+- sujet central « MON PROJET » éditable ;
+- ajout de branches, idées et sous-idées ;
+- menu contextuel des branches avec couleurs, texte, taille, icônes et suppression ;
+- bouton `+ Icône` et `+ Ajouter une branche` dans la bulle centrale ;
+- meilleure zone de sélection des branches à la souris et au tactile ;
+- responsive iPhone, iPad et ordinateur ;
+- sauvegarde locale du projet ;
+- export PDF cadré sur la carte ;
+- sur iPhone/iPad : partage vers **Fichiers** ;
+- sur Mac/PC : enregistrement direct du PDF sur l’ordinateur.
 
-## Pour continuer
+## Nettoyage effectué
 
-Toutes les prochaines modifications doivent partir de cette version afin d’éviter de réintroduire d’anciens correctifs ou doublons.
+- suppression du bloc CSS v41 devenu redondant ;
+- suppression des intitulés de correctifs de version dans la feuille de style ;
+- conservation d’un seul système actif d’édition des textes de branches ;
+- conservation des anciennes clés de stockage uniquement pour rester compatible avec les projets déjà enregistrés ;
+- regroupement des styles finaux par fonctionnalité ;
+- vérification de la syntaxe JavaScript et CSS.
 
+## Base de travail
 
-## Export PDF
-
-Le bouton **Enregistrer sous** crée maintenant un vrai fichier PDF, sans ouvrir la boîte de dialogue d’impression. L’export recadre automatiquement la page sur le contenu visible de la carte. Sur iPhone/iPad, la feuille de partage permet d’utiliser **Enregistrer dans Fichiers**.
+Pour les prochaines modifications, repartez uniquement de ce dossier **carte-mentale-definitive** afin d’éviter de réintroduire d’anciens correctifs.

@@ -2825,59 +2825,122 @@ function buildExportClone(mapWidth,mapHeight){
   return clone;
 }
 
+function escapeXmlText(value){
+  return String(value ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&apos;');
+}
+
+function exportCanvasDataUrl(canvas){
+  if(!canvas) return '';
+  try{ return canvas.toDataURL('image/png'); }
+  catch(err){
+    console.warn('Calque d’icônes non exportable, ignoré.',err);
+    return '';
+  }
+}
+
+function buildPureSvgExport(bounds,mapWidth,mapHeight){
+  // Safari gère beaucoup mieux un SVG pur qu’un foreignObject contenant toute la page.
+  const branchSvg=connections.cloneNode(true);
+  branchSvg.querySelectorAll('.branch-hit,.main-drag-handle,.node-drag-handle,.drag-touch-zone').forEach(el=>el.remove());
+  branchSvg.removeAttribute('id');
+  branchSvg.setAttribute('x','0');
+  branchSvg.setAttribute('y','0');
+  branchSvg.setAttribute('width',String(mapWidth));
+  branchSvg.setAttribute('height',String(mapHeight));
+  branchSvg.setAttribute('viewBox',`0 0 ${mapWidth} ${mapHeight}`);
+  branchSvg.setAttribute('overflow','visible');
+
+  const serializer=new XMLSerializer();
+  const branchMarkup=serializer.serializeToString(branchSvg);
+  const css=getExportStyleText();
+  const backIcons=exportCanvasDataUrl(freeIconLayer);
+  const frontIcons=exportCanvasDataUrl(freeIconFrontLayer);
+
+  const mapRect=mindmap.getBoundingClientRect();
+  const cRect=centre.getBoundingClientRect();
+  const cx=cRect.left-mapRect.left+cRect.width/2;
+  const cy=cRect.top-mapRect.top+cRect.height/2;
+  const centreStyle=getComputedStyle(centre);
+  const inputStyle=getComputedStyle(centreInput);
+  const centreStroke=centreStyle.borderTopColor || '#4e8588';
+  const centreFill=centreStyle.backgroundColor && centreStyle.backgroundColor!=='rgba(0, 0, 0, 0)' ? centreStyle.backgroundColor : '#fff';
+  const textColor=inputStyle.color || '#153e58';
+  const fontSize=parseFloat(inputStyle.fontSize)||20;
+  const fontWeight=inputStyle.fontWeight||'900';
+  const fontFamily=(inputStyle.fontFamily||'Arial').replace(/"/g,"'");
+  const title=escapeXmlText(state.centre||centreInput.value||'MON PROJET');
+
+  const iconBackMarkup=backIcons ? `<image href="${backIcons}" x="0" y="0" width="${mapWidth}" height="${mapHeight}" preserveAspectRatio="none"/>` : '';
+  const iconFrontMarkup=frontIcons ? `<image href="${frontIcons}" x="0" y="0" width="${mapWidth}" height="${mapHeight}" preserveAspectRatio="none"/>` : '';
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${Math.ceil(bounds.width)}" height="${Math.ceil(bounds.height)}" viewBox="0 0 ${bounds.width} ${bounds.height}">
+    <style>${css}</style>
+    <rect x="0" y="0" width="100%" height="100%" fill="#fff"/>
+    <g transform="translate(${-bounds.x} ${-bounds.y})">
+      ${iconBackMarkup}
+      ${branchMarkup}
+      ${iconFrontMarkup}
+      <ellipse cx="${cx}" cy="${cy}" rx="${Math.max(1,cRect.width/2-3)}" ry="${Math.max(1,cRect.height/2-3)}" fill="${centreFill}" stroke="${centreStroke}" stroke-width="5"/>
+      <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" fill="${textColor}" font-family="${escapeXmlText(fontFamily)}" font-size="${fontSize}" font-weight="${escapeXmlText(fontWeight)}">${title}</text>
+    </g>
+  </svg>`;
+}
+
+async function loadSvgAsImage(svgMarkup){
+  // Data URL évite plusieurs problèmes de blob: rencontrés par Safari avec les SVG dynamiques.
+  const dataUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgMarkup);
+  const img=new Image();
+  img.decoding='async';
+  await new Promise((resolve,reject)=>{
+    let settled=false;
+    const done=fn=>arg=>{ if(settled) return; settled=true; fn(arg); };
+    img.onload=done(resolve);
+    img.onerror=done(()=>reject(new Error('Safari n’a pas pu charger le rendu SVG du projet.')));
+    img.src=dataUrl;
+    if(img.complete && img.naturalWidth>0) resolve();
+  });
+  return img;
+}
+
+async function canvasToJpegBlob(canvas){
+  // toBlob est parfois absent/instable dans certaines WebViews Safari : repli via dataURL.
+  if(typeof canvas.toBlob==='function'){
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.94));
+    if(blob) return blob;
+  }
+  const data=canvas.toDataURL('image/jpeg',.94);
+  const response=await fetch(data);
+  return response.blob();
+}
+
 async function renderMindMapToJpeg(){
   const mapRect=mindmap.getBoundingClientRect();
   const mapWidth=Math.max(1,Math.round(mapRect.width));
   const mapHeight=Math.max(1,Math.round(mapRect.height));
   const bounds=getMindMapExportBounds(42);
-  const clone=buildExportClone(mapWidth,mapHeight);
-  const serializer=new XMLSerializer();
-  const cloneMarkup=serializer.serializeToString(clone);
-  const css=getExportStyleText();
+  const svgMarkup=buildPureSvgExport(bounds,mapWidth,mapHeight);
+  const img=await loadSvgAsImage(svgMarkup);
 
-  const exportOverrides=`
-    #mindmap{position:relative!important;width:${mapWidth}px!important;height:${mapHeight}px!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;overflow:hidden!important;background:#fff!important;}
-    #appMenu,#branchControlsLayer,#freeIconOverlayLayer,#freeIconResizePreview,#editorLayer,.centre-add-branch,.centre-add-icon,.branch-hit{display:none!important;visibility:hidden!important;}
-    .control-group,.child-control-group,.main-drag-handle,.node-drag-handle,.drag-touch-zone{display:none!important;visibility:hidden!important;}
-  `;
+  const maxSide=3072;
+  const targetScale=Math.min(2,maxSide/Math.max(bounds.width,bounds.height));
+  const scale=Math.max(.75,targetScale);
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(bounds.width*scale));
+  canvas.height=Math.max(1,Math.round(bounds.height*scale));
+  const ctx=canvas.getContext('2d',{alpha:false});
+  if(!ctx) throw new Error('Canvas indisponible.');
+  ctx.fillStyle='#fff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(img,0,0,canvas.width,canvas.height);
 
-  const svgMarkup=`<svg xmlns="http://www.w3.org/2000/svg" width="${bounds.width}" height="${bounds.height}" viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}">
-    <foreignObject x="0" y="0" width="${mapWidth}" height="${mapHeight}">
-      <div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:${mapWidth}px;height:${mapHeight}px;background:#fff;overflow:hidden;">
-        <style>${css}\n${exportOverrides}</style>
-        ${cloneMarkup}
-      </div>
-    </foreignObject>
-  </svg>`;
-
-  const svgBlob=new Blob([svgMarkup],{type:'image/svg+xml;charset=utf-8'});
-  const url=URL.createObjectURL(svgBlob);
-  try{
-    const img=new Image();
-    await new Promise((resolve,reject)=>{
-      img.onload=resolve;
-      img.onerror=()=>reject(new Error('Impossible de préparer l’aperçu de la carte.'));
-      img.src=url;
-    });
-
-    const maxSide=4096;
-    const targetScale=Math.min(2,maxSide/Math.max(bounds.width,bounds.height));
-    const scale=Math.max(.6,targetScale);
-    const canvas=document.createElement('canvas');
-    canvas.width=Math.max(1,Math.round(bounds.width*scale));
-    canvas.height=Math.max(1,Math.round(bounds.height*scale));
-    const ctx=canvas.getContext('2d',{alpha:false});
-    ctx.fillStyle='#fff';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(img,0,0,canvas.width,canvas.height);
-
-    const blob=await new Promise((resolve,reject)=>{
-      canvas.toBlob(result=>result?resolve(result):reject(new Error('Impossible de créer l’image du projet.')),'image/jpeg',.96);
-    });
-    return {blob,width:canvas.width,height:canvas.height};
-  }finally{
-    URL.revokeObjectURL(url);
-  }
+  const blob=await canvasToJpegBlob(canvas);
+  if(!blob || !blob.size) throw new Error('Impossible de créer l’image du projet.');
+  return {blob,width:canvas.width,height:canvas.height};
 }
 
 function concatUint8Arrays(parts){
@@ -2933,40 +2996,135 @@ function projectExportFilename(){
   return `${clean||'carte-mentale'}.pdf`;
 }
 
-async function sendPdfToFiles(pdfBlob,filename){
-  const file=new File([pdfBlob],filename,{type:'application/pdf'});
-
-  // Sur iPhone/iPad, la feuille de partage contient « Enregistrer dans Fichiers ».
-  if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
-    await navigator.share({files:[file],title:'Carte mentale'});
-    return;
-  }
-
-  // Sur les navigateurs qui le permettent, on ouvre directement le sélecteur de fichier.
-  if(window.showSaveFilePicker){
-    const handle=await window.showSaveFilePicker({
-      suggestedName:filename,
-      types:[{description:'Document PDF',accept:{'application/pdf':['.pdf']}}]
-    });
-    const writable=await handle.createWritable();
-    await writable.write(pdfBlob);
-    await writable.close();
-    return;
-  }
-
-  // Repli universel : téléchargement du fichier, sans passer par l'impression.
+function downloadPdfFallback(pdfBlob,filename){
   const url=URL.createObjectURL(pdfBlob);
-  try{
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=filename;
-    a.rel='noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }finally{
-    setTimeout(()=>URL.revokeObjectURL(url),1200);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  a.rel='noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2500);
+}
+
+function isAppleTouchDevice(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+}
+
+async function savePreparedPdf(pdfBlob,filename){
+  const appleTouch=isAppleTouchDevice();
+
+  // iPhone / iPad : la feuille de partage est la voie native pour
+  // « Enregistrer dans Fichiers ». Elle doit rester appelée directement
+  // depuis le clic de l'utilisateur.
+  if(appleTouch){
+    const file=new File([pdfBlob],filename,{type:'application/pdf'});
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      try{
+        await navigator.share({files:[file],title:'Carte mentale'});
+        return true;
+      }catch(err){
+        if(err?.name==='AbortError') return false;
+        console.warn('Partage iOS/iPadOS indisponible, téléchargement de secours.',err);
+      }
+    }
+    downloadPdfFallback(pdfBlob,filename);
+    return true;
   }
+
+  // Ordinateur : on privilégie un vrai sélecteur d'enregistrement lorsqu'il
+  // est disponible. Safari ne l'expose pas toujours ; dans ce cas on lance
+  // directement le téléchargement du PDF au lieu d'ouvrir le menu Partager.
+  if(window.showSaveFilePicker){
+    try{
+      const handle=await window.showSaveFilePicker({
+        suggestedName:filename,
+        types:[{description:'Document PDF',accept:{'application/pdf':['.pdf']}}]
+      });
+      const writable=await handle.createWritable();
+      await writable.write(pdfBlob);
+      await writable.close();
+      return true;
+    }catch(err){
+      if(err?.name==='AbortError') return false;
+      console.warn('Sélecteur de fichier indisponible, téléchargement direct.',err);
+    }
+  }
+
+  downloadPdfFallback(pdfBlob,filename);
+  return true;
+}
+
+function openPdfExportPreview(preview,pdfBlob,filename){
+  document.querySelector('.pdf-export-preview')?.remove();
+
+  const overlay=document.createElement('div');
+  overlay.className='pdf-export-preview';
+  overlay.setAttribute('role','dialog');
+  overlay.setAttribute('aria-modal','true');
+  overlay.setAttribute('aria-label','Aperçu du PDF');
+
+  const panel=document.createElement('section');
+  panel.className='pdf-export-preview-panel';
+
+  const header=document.createElement('div');
+  header.className='pdf-export-preview-header';
+  header.innerHTML='<strong>Aperçu du projet</strong><small>Le PDF est cadré sur votre carte.</small>';
+
+  const close=document.createElement('button');
+  close.type='button';
+  close.className='pdf-export-preview-close';
+  close.setAttribute('aria-label','Fermer');
+  close.textContent='×';
+  header.appendChild(close);
+
+  const frame=document.createElement('div');
+  frame.className='pdf-export-preview-frame';
+  const img=document.createElement('img');
+  img.alt='Aperçu de la carte mentale';
+  const previewUrl=URL.createObjectURL(preview.blob);
+  img.src=previewUrl;
+  frame.appendChild(img);
+
+  const actions=document.createElement('div');
+  actions.className='pdf-export-preview-actions';
+  const cancel=document.createElement('button');
+  cancel.type='button';
+  cancel.className='pdf-export-preview-secondary';
+  cancel.textContent='Annuler';
+  const save=document.createElement('button');
+  save.type='button';
+  save.className='pdf-export-preview-save';
+  save.textContent=isAppleTouchDevice() ? 'Enregistrer dans Fichiers' : 'Enregistrer sur l’ordinateur';
+  actions.append(cancel,save);
+
+  panel.append(header,frame,actions);
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+
+  const dispose=()=>{
+    URL.revokeObjectURL(previewUrl);
+    overlay.remove();
+  };
+  close.addEventListener('click',dispose);
+  cancel.addEventListener('click',dispose);
+  overlay.addEventListener('pointerdown',e=>{ if(e.target===overlay) dispose(); });
+  save.addEventListener('click',async()=>{
+    save.disabled=true;
+    const old=save.textContent;
+    save.textContent=isAppleTouchDevice() ? 'Ouverture…' : 'Enregistrement…';
+    try{
+      const completed=await savePreparedPdf(pdfBlob,filename);
+      if(completed) dispose();
+    }finally{
+      if(save.isConnected){
+        save.disabled=false;
+        save.textContent=old;
+      }
+    }
+  });
 }
 
 async function saveProjectAsPdf(){
@@ -2982,15 +3140,14 @@ async function saveProjectAsPdf(){
   }
 
   try{
-    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    // Laisse le temps aux menus et éditeurs de disparaître avant la capture.
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(resolve,40))));
     const preview=await renderMindMapToJpeg();
     const pdf=await createPdfFromJpeg(preview.blob,preview.width,preview.height);
-    await sendPdfToFiles(pdf,projectExportFilename());
+    openPdfExportPreview(preview,pdf,projectExportFilename());
   }catch(err){
-    if(err?.name!=='AbortError'){
-      console.error(err);
-      alert('Impossible d’enregistrer le fichier pour le moment. Réessayez après avoir fermé les menus ou les éditeurs ouverts.');
-    }
+    console.error(err);
+    alert('Impossible de préparer l’aperçu du projet. Réessayez dans un instant.');
   }finally{
     if(savePdfButton){
       savePdfButton.disabled=false;
