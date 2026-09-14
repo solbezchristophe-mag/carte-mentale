@@ -232,9 +232,11 @@ function save() {
 
 function setAppMenuOpen(open) {
   if(!appMenu || !appMenuToggle || !appMenuPanel) return;
-  appMenu.classList.toggle('open', !!open);
-  appMenuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  appMenuPanel.hidden = !open;
+  const isOpen = !!open;
+  appMenu.classList.toggle('open', isOpen);
+  appMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  appMenuPanel.hidden = !isOpen;
+  appMenuPanel.style.display = isOpen ? 'flex' : 'none';
 }
 
 function closeAppMenu() {
@@ -384,19 +386,28 @@ if(addBranchButton){
 }
 
 if(appMenuToggle){
-  appMenuToggle.addEventListener('pointerdown',e=>{
-    e.stopPropagation();
-  },true);
-  appMenuToggle.addEventListener('click',e=>{
-    e.preventDefault();
-    e.stopPropagation();
+  const handleMenuToggle=(e)=>{
+    if(e?.cancelable) e.preventDefault();
+    e?.stopPropagation?.();
     toggleAppMenu();
-  },true);
+  };
+  ['pointerdown','mousedown','touchstart'].forEach(evt=>{
+    appMenuToggle.addEventListener(evt,e=>{
+      e.stopPropagation();
+    },true);
+  });
+  appMenuToggle.addEventListener('click',handleMenuToggle,true);
+  appMenuToggle.addEventListener('touchend',handleMenuToggle,{capture:true, passive:false});
 }
 
-appMenuPanel?.addEventListener('pointerdown',e=>{
-  e.stopPropagation();
-},true);
+[appMenu, appMenuPanel].forEach(el=>{
+  if(!el) return;
+  ['pointerdown','mousedown','touchstart','click'].forEach(evt=>{
+    el.addEventListener(evt,e=>{
+      e.stopPropagation();
+    },true);
+  });
+});
 
 [addBranchButton, addFreeIconButton, savePdfButton, resetButton].forEach(btn=>{
   btn?.addEventListener('click',()=>{
@@ -2485,7 +2496,10 @@ function fitCentreTitle(){
   }
 
   const natural=Math.min(centreInput.scrollHeight,available);
-  centreInput.style.height=`${Math.max(size*1.2,natural)}px`;
+  const lineBox=Math.ceil(size*1.08);
+  centreInput.style.height=`${Math.max(lineBox,natural)}px`;
+  centreInput.style.paddingTop='0px';
+  centreInput.style.paddingBottom='0px';
 }
 
 
@@ -2625,6 +2639,9 @@ document.addEventListener('pointerdown',e=>{
 });
 addFreeIconButton?.addEventListener('click',openFreeIconPicker);
 
+document.addEventListener('touchstart',e=>{
+  if(appMenu && !appMenu.contains(e.target)) closeAppMenu();
+},{passive:true});
 document.addEventListener('pointerdown',e=>{
   if(appMenu && !appMenu.contains(e.target)) closeAppMenu();
   if(e.target.closest?.('.branch-editor')) return;
