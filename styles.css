@@ -4443,3 +4443,25 @@ body.dragging-branch * {
   -webkit-font-smoothing: antialiased;
   font-family: "Avenir Next","Segoe UI",Arial,sans-serif !important;
 }
+
+
+/* ============================================================
+   V28 — éditeur tactile Android/Samsung : clavier stable
+   ============================================================ */
+
+body.editing-branch-text .branch-editor {
+  touch-action: manipulation !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  pointer-events: auto !important;
+}
+
+body.editing-branch-text .main-drag-handle,
+body.editing-branch-text .node-drag-handle,
+body.editing-branch-text .drag-touch-zone {
+  pointer-events: none !important;
+}
+
+body.editing-branch-text #branchControlsLayer {
+  pointer-events: none !important;
+}

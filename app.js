@@ -216,6 +216,8 @@ let branchMenuHandleHover=false;
 let branchMenuSuppressUntil=0;
 let dragState = null;
 let activeBranchTouchId = null;
+let textEditingActive = false;
+let pendingRenderAfterEdit = false;
 let reopenMenuKey = null;
 
 // ============================================================
@@ -2020,20 +2022,77 @@ function createChildControls(branch,node,x,y,parentX,parentY,color,side,level){
 
 function editObjectText(object,x,y,color){
   editorLayer.innerHTML='';
+  textEditingActive=true;
+  pendingRenderAfterEdit=false;
+  document.body.classList.add('editing-branch-text');
+
   const input=document.createElement('input');
-  input.className='branch-editor'; input.type='text'; input.value=object.text;
+  input.className='branch-editor';
+  input.type='text';
+  input.value=object.text;
+  input.setAttribute('autocomplete','off');
+  input.setAttribute('autocapitalize','sentences');
   input.style.left=`${clamp(x,135,innerWidth-135)}px`;
   input.style.top=`${clamp(y-28,55,innerHeight-50)}px`;
   input.style.setProperty('--editor-color',color);
-  editorLayer.appendChild(input); input.focus(); input.select();
+  editorLayer.appendChild(input);
+
+  // Sur Android/Samsung, attendre la fin du cycle tactile avant de demander
+  // le focus évite que le clavier soit refermé par le même geste qui ouvre l'éditeur.
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      if(!input.isConnected) return;
+      try{ input.focus({preventScroll:true}); }catch(_){ input.focus(); }
+      // La sélection automatique est utile à la souris mais peut perturber certains
+      // claviers Android. Sur tactile on place simplement le curseur à la fin.
+      const coarse=window.matchMedia?.('(pointer: coarse)')?.matches;
+      if(coarse){
+        try{ input.setSelectionRange(input.value.length,input.value.length); }catch(_){ }
+      }else{
+        try{ input.select(); }catch(_){ }
+      }
+    },35);
+  });
+
   let done=false;
   const finish=commit=>{
-    if(done) return; done=true;
-    if(commit){const v=input.value.trim(); if(v)object.text=v; save();}
-    input.remove(); render();
+    if(done) return;
+    done=true;
+    if(commit){
+      const v=input.value.trim();
+      if(v)object.text=v;
+      save();
+    }
+    textEditingActive=false;
+    document.body.classList.remove('editing-branch-text');
+    input.remove();
+    pendingRenderAfterEdit=false;
+    render();
   };
-  input.addEventListener('keydown',e=>{if(e.key==='Enter')finish(true);if(e.key==='Escape')finish(false);});
-  input.addEventListener('blur',()=>finish(true));
+
+  input.addEventListener('pointerdown',e=>e.stopPropagation());
+  input.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter') finish(true);
+    if(e.key==='Escape') finish(false);
+  });
+  input.addEventListener('blur',()=>{
+    // Ignore un blur très précoce provoqué par l'ouverture du clavier Android.
+    // Le prochain cycle rend le focus si le champ existe encore.
+    if(textEditingActive && input.isConnected && document.visibilityState==='visible'){
+      const elapsed=performance.now()-(input._editOpenedAt||0);
+      if(elapsed<500){
+        setTimeout(()=>{
+          if(textEditingActive && input.isConnected){
+            try{ input.focus({preventScroll:true}); }catch(_){ input.focus(); }
+          }
+        },60);
+        return;
+      }
+    }
+    finish(true);
+  });
+  input._editOpenedAt=performance.now();
 }
 
 function fanTargets(parentX,parentY,baseAngle,count,level,layout,slotIndex){
@@ -2161,6 +2220,7 @@ function beginBranchDrag(payload,{pointerId=null,captureTarget=null,touchId=null
 }
 
 function startDragHandle(e, payload){
+  if(textEditingActive || e.target?.closest?.('.branch-editor')) return;
   e.preventDefault();
   e.stopPropagation();
   const captureTarget=e.currentTarget;
@@ -2171,6 +2231,7 @@ function startDragHandle(e, payload){
 }
 
 function startTouchDragHandle(e,payload){
+  if(textEditingActive || e.target?.closest?.('.branch-editor')) return;
   const touch=e.changedTouches?.[0];
   if(!touch) return;
   if(e.cancelable) e.preventDefault();
@@ -2504,6 +2565,7 @@ document.addEventListener('pointerdown',e=>{
 addFreeIconButton?.addEventListener('click',openFreeIconPicker);
 
 document.addEventListener('pointerdown',e=>{
+  if(e.target.closest?.('.branch-editor')) return;
   if(!activeGroup) return;
   if(document.body.classList.contains('dragging-branch') || document.body.classList.contains('dragging-free-icon')) return;
   if(activeGroup.contains(e.target)) return;
@@ -2517,7 +2579,17 @@ resetButton.addEventListener('click',()=>{
   if(!confirm('Effacer toute la carte mentale ?')) return;
   state={centre:'MON PROJET',branches:[],freeIcons:[]}; nextId=1; activeFreeIconId=null; freeIconDrag=null; centreInput.value=state.centre; save(); render(); renderFreeIcons(); requestAnimationFrame(renderFreeIcons);
 });
-window.addEventListener('resize',render);
+let resizeRenderTimer=null;
+window.addEventListener('resize',()=>{
+  // L'ouverture/fermeture du clavier virtuel Android déclenche resize.
+  // Ne jamais recréer la carte pendant l'édition, sinon le champ disparaît.
+  if(textEditingActive || document.activeElement?.classList?.contains('branch-editor')){
+    pendingRenderAfterEdit=true;
+    return;
+  }
+  clearTimeout(resizeRenderTimer);
+  resizeRenderTimer=setTimeout(()=>render(),80);
+});
 
 document.getElementById('iconPickerClose')?.addEventListener('click',closeIconPicker);
 document.getElementById('iconPickerBackdrop')?.addEventListener('click',closeIconPicker);
