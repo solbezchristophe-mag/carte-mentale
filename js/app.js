@@ -16,6 +16,7 @@ function getBranchTextEditor(){
 }
 const addBranchButton = document.getElementById('addBranch');
 const centreAddBranchButton = document.getElementById('centreAddBranch');
+const centreAddIconButton = document.getElementById('centreAddIcon');
 const resetButton = document.getElementById('resetMap');
 const savePdfButton = document.getElementById('savePdf');
 let freeIconLayer = document.getElementById('freeIconLayer');
@@ -1708,7 +1709,7 @@ function drawBranchPath({startX,startY,endX,endY,startAngle,endAngle,color,width
   }else{
     bez=makeBezier(startX,startY,endX,endY,startAngle,endAngle,h1,h2);
   }
-  const hit=svgEl('path',{d:bez.d,class:'branch-hit','stroke-width':Math.max(30,width+22)});
+  const hit=svgEl('path',{d:bez.d,class:'branch-hit','stroke-width':Math.max(44,width+36)});
   svg.appendChild(hit);
   if(main){
     svg.appendChild(svgEl('path',{d:bez.d,fill:'none',stroke:color,'stroke-width':width+3,'stroke-linecap':'round','stroke-linejoin':'round',opacity:'.10'}));
@@ -2795,6 +2796,12 @@ bindReliableMenuAction(addBranchButton, ()=>{
 if(centreAddBranchButton){
   bindReliableMenuAction(centreAddBranchButton, ()=>{
     addMainBranch();
+  });
+}
+
+if(centreAddIconButton){
+  bindReliableMenuAction(centreAddIconButton, ()=>{
+    openFreeIconPicker();
   });
 }
 

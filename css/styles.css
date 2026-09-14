@@ -4760,3 +4760,116 @@ body,
     bottom: 7px;
   }
 }
+
+
+/* ============================================================
+   V42 — action « + Icône » dans le sujet central + zones de sélection élargies
+   ============================================================ */
+
+/* Les deux actions du sujet central utilisent exactement la même présentation. */
+.centre-add-icon,
+.centre-add-branch {
+  position: absolute;
+  left: 50%;
+  z-index: 90;
+  min-width: 146px;
+  min-height: 28px;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--centre);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(21,83,97,.18);
+  font: 600 12px/1.05 "Avenir Next","Segoe UI",Arial,sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, 4px) scale(.98);
+  transition: opacity .16s ease, transform .16s ease, visibility .16s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.centre-add-icon {
+  top: 9px;
+  bottom: auto;
+  transform: translate(-50%, -4px) scale(.98);
+}
+
+.centre-add-branch {
+  top: auto;
+  bottom: 9px;
+}
+
+.centre:hover .centre-add-icon,
+.centre:focus-within .centre-add-icon,
+.centre.centre-action-visible .centre-add-icon,
+.centre-add-icon:hover,
+.centre-add-icon:focus-visible,
+.centre:hover .centre-add-branch,
+.centre:focus-within .centre-add-branch,
+.centre.centre-action-visible .centre-add-branch,
+.centre-add-branch:hover,
+.centre-add-branch:focus-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.centre-add-icon:focus-visible,
+.centre-add-branch:focus-visible {
+  outline: none;
+  box-shadow: 0 10px 24px rgba(21,83,97,.23);
+}
+
+/* Quand les actions sont visibles, on réserve la même place au-dessus et au-dessous
+   du nom pour qu'il reste au centre de la bulle. */
+.centre:hover #centreInput,
+.centre:focus-within #centreInput,
+.centre.centre-action-visible #centreInput {
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+@media (pointer: coarse), (hover: none) {
+  .centre-add-icon,
+  .centre-add-branch {
+    min-width: 146px;
+    min-height: 30px;
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+  .centre-add-icon { top: 8px; }
+  .centre-add-branch { bottom: 8px; }
+
+  /* Plus grande cible invisible au doigt, sans épaissir visuellement les lignes. */
+  #connections .branch-hit {
+    stroke-width: 54px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .centre-add-icon,
+  .centre-add-branch {
+    min-width: 138px;
+    min-height: 28px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+  }
+  .centre-add-icon { top: 7px; }
+  .centre-add-branch { bottom: 7px; }
+}
+
+/* Cible souris plus généreuse également sur ordinateur. Le trait reste transparent. */
+#connections .branch-hit {
+  stroke-width: 44px !important;
+}
+
+@media (pointer: coarse), (hover: none) {
+  #connections .branch-hit {
+    stroke-width: 54px !important;
+  }
+}
