@@ -111,18 +111,20 @@ const automaticColors = [
 
 
 const PRESET_COLOR_SWATCHES = [
-  '#c85f73','#5d8eaa','#7f9a72','#c88c67',
-  '#8f79a3','#5f9b98','#b79d59','#8b667f',
-  '#d87288','#6d9ab3','#8baa7d','#d49a74',
-  '#9a84b0','#6aa8a4','#c2aa66','#9b748c'
+  '#000000','#7f7f7f','#880015','#ed1c24','#ff7f27','#fff200','#22b14c','#00a2e8',
+  '#3f48cc','#a349a4','#ffffff','#c3c3c3','#b97a57','#ffaec9','#ffc90e','#efe4b0',
+  '#b5e61d','#99d9ea','#7092be','#c8bfe7','#404040','#bfbfbf','#5c2e00','#8b0000',
+  '#d2691e','#d4af37','#2e8b57','#1e90ff','#483d8b','#800080','#f4f4f4','#e8d9c5'
 ];
 
 function buildColorPaletteMarkup(selectedColor,label){
-  const current=String(selectedColor||'').toLowerCase();
+  const current=String(selectedColor||'#000000').toLowerCase();
   const swatches=PRESET_COLOR_SWATCHES.map(color=>`<button type="button" class="color-swatch${color.toLowerCase()===current?' active':''}" data-color="${color}" aria-label="${label} : ${color}" title="${color}" style="--swatch:${color}"></button>`).join('');
   return `
     <div class="color-wrap" title="${label}">
-      <button type="button" class="color-palette-button" aria-label="${label}">🎨</button>
+      <button type="button" class="color-palette-button" aria-label="${label}" style="--current-color:${current}">
+        <span class="color-current-chip" aria-hidden="true"></span>
+      </button>
       <div class="color-palette" role="listbox" aria-label="${label}">${swatches}</div>
     </div>`;
 }
@@ -213,6 +215,7 @@ let activeGroup = null;
 let branchMenuHandleHover=false;
 let branchMenuSuppressUntil=0;
 let dragState = null;
+let activeBranchTouchId = null;
 let reopenMenuKey = null;
 
 // ============================================================
@@ -631,31 +634,94 @@ function normalizeFrenchIconQuery(value){
   return [...new Set(translated.join(' ').split(/\s+/).filter(Boolean))].join(' ');
 }
 
+const ICON_QUERY_EXPANSIONS = {
+  'sante':['health medical','doctor hospital','heart pulse medical','wellness care'],
+  'santé':['health medical','doctor hospital','heart pulse medical','wellness care'],
+  'objectif':['target goal','bullseye objective','goal success','target achievement'],
+  'projet':['project roadmap','plan strategy','planning workflow'],
+  'travail':['work business','office briefcase','team company'],
+  'famille':['family people','home parenting','group users'],
+  'amour':['love heart','romance affection','couple relationship'],
+  'voyage':['travel trip','airplane suitcase','map vacation'],
+  'maison':['home house','apartment building','interior property'],
+  'argent':['money finance','cash wallet','budget bank'],
+  'budget':['budget finance','wallet calculator','accounting money'],
+  'sport':['sport fitness','dumbbell exercise','running health'],
+  'idee':['idea lightbulb','brain concept','creative inspiration'],
+  'idée':['idea lightbulb','brain concept','creative inspiration'],
+  'temps':['time clock','calendar schedule','hour timer'],
+  'calendrier':['calendar schedule','date planner'],
+  'nature':['nature leaf','tree outdoor','flower eco'],
+  'repas':['food meal','restaurant utensils','cooking kitchen'],
+  'ecole':['school education','book learning','graduation study'],
+  'école':['school education','book learning','graduation study'],
+  'technologie':['technology laptop','computer digital','internet device'],
+  'stress':['stress alert','mind worry','tension anxiety'],
+  'securite':['security shield','protection lock','safety secure'],
+  'sécurité':['security shield','protection lock','safety secure']
+};
+
+function collectExpandedQueryTerms(value){
+  const baseTerms=[...new Set(iconSearchTerms(value))];
+  const expanded=[];
+  for(const term of baseTerms){
+    if(ICON_QUERY_EXPANSIONS[term]) expanded.push(...ICON_QUERY_EXPANSIONS[term]);
+  }
+  return [...new Set(expanded.map(v=>String(v).trim()).filter(Boolean))];
+}
+
 function buildFrenchIconQueries(value){
   const source=String(value||'').trim().toLowerCase();
   if(!source) return [];
   const ascii=source.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   const translated=normalizeFrenchIconQuery(source);
-  const queries=[translated, ascii, source]
+  const translatedTerms=iconSearchTerms(translated);
+  const baseQueries=[];
+  const add=q=>{
+    const cleaned=String(q||'').replace(/\s+/g,' ').trim();
+    if(cleaned && !baseQueries.includes(cleaned)) baseQueries.push(cleaned);
+  };
+
+  add(source);
+  add(ascii);
+  add(translated);
+  add(translatedTerms.slice(0,2).join(' '));
+  add(translatedTerms.slice(0,3).join(' '));
+
+  for(const extra of collectExpandedQueryTerms(source)) add(extra);
+  for(const extra of collectExpandedQueryTerms(translated)) add(extra);
+
+  const styleBases=[translatedTerms.slice(0,2).join(' '), translatedTerms.slice(0,3).join(' '), ascii]
     .map(v=>String(v||'').trim())
     .filter(Boolean);
-  // Quelques requêtes plus ciblées donnent de meilleurs résultats sur les bibliothèques d'icônes.
-  const firstTranslated=translated.split(/\s+/).slice(0,3).join(' ');
-  if(firstTranslated) queries.push(firstTranslated);
-  return [...new Set(queries)];
+  for(const base of styleBases){
+    add(`${base} icon`);
+    add(`${base} outline`);
+    add(`${base} rounded`);
+    add(`${base} symbol`);
+  }
+
+  return baseQueries.slice(0,12);
 }
 
 function scoreIconifyResult(iconName, frenchQuery){
   const [prefix,name='']=String(iconName||'').split(':');
-  const preferred=['lucide','tabler','material-symbols','mdi','ph','solar','heroicons','fa6-solid','fa6-regular'];
-  let score=Math.max(0,preferred.length-preferred.indexOf(prefix));
-  if(!preferred.includes(prefix)) score=0;
-  const terms=normalizeFrenchIconQuery(frenchQuery).split(/\s+/).filter(Boolean);
+  const preferred=['material-symbols','material-symbols-outlined','lucide','tabler','mdi','ph','solar','heroicons','carbon','fluent','fa6-solid','fa6-regular'];
+  let score=0;
+  const prefIndex=preferred.indexOf(prefix);
+  if(prefIndex>=0) score += (preferred.length-prefIndex)*3;
+  const terms=[...new Set([
+    ...iconSearchTerms(frenchQuery),
+    ...iconSearchTerms(normalizeFrenchIconQuery(frenchQuery))
+  ])];
   const clean=name.toLowerCase();
   for(const term of terms){
-    if(clean===term) score+=30;
-    else if(clean.includes(term)) score+=12;
+    if(clean===term) score+=48;
+    else if(clean.startsWith(term)) score+=28;
+    else if(clean.includes(term)) score+=14;
   }
+  if(/logo|brand|payment|flag/.test(clean)) score-=6;
+  if(/outline|rounded|circle|square/.test(clean)) score+=2;
   return score;
 }
 
@@ -892,28 +958,26 @@ function appendExternalIconTools(grid,targetObject=null){
     if(!q) return;
     const queries=buildFrenchIconQueries(q);
     searchBtn.disabled=true;
-    status.textContent=`Recherche en français de « ${q} »…`;
+    status.textContent=`Recherche d’icônes pour « ${q} » dans une base élargie…`;
     results.innerHTML='';
     try{
-      // Iconify sert ici de catalogue technique, mais la recherche est interprétée en français
-      // avant l'envoi et lancée avec plusieurs synonymes pour éviter les résultats hors sujet.
       const found=[];
-      for(const query of queries.slice(0,4)){
-        const params=new URLSearchParams({query,limit:'64'});
+      for(const query of queries){
+        const params=new URLSearchParams({query,limit:'96'});
         const response=await fetch(`https://api.iconify.design/search?${params.toString()}`);
         if(!response.ok) continue;
         const data=await response.json();
         for(const icon of (data?.icons||[])) if(!found.includes(icon)) found.push(icon);
-        if(found.length>=96) break;
+        if(found.length>=240) break;
       }
 
       const icons=found
         .sort((a,b)=>scoreIconifyResult(b,q)-scoreIconifyResult(a,q))
-        .slice(0,48);
+        .slice(0,72);
 
       status.textContent=icons.length
-        ? `${icons.length} icônes trouvées pour « ${q} » · recherche interprétée en français`
-        : `Aucune icône Internet trouvée pour « ${q} ». Essaie aussi la recherche dans les icônes intégrées juste au-dessus.`;
+        ? `${icons.length} icônes trouvées pour « ${q} » · base étendue et recherche interprétée en français`
+        : `Aucune icône Internet trouvée pour « ${q} ». Essaie un synonyme ou regarde les icônes intégrées juste au-dessus.`;
 
       for(const iconName of icons){
         const [prefix,name]=String(iconName).split(':');
@@ -922,7 +986,7 @@ function appendExternalIconTools(grid,targetObject=null){
         const b=document.createElement('button');
         b.type='button';
         b.className='internet-icon-result';
-        b.title=`${q} · ${name.replace(/[-_]+/g,' ')}`;
+        b.title=`${q} · ${name.replace(/[-_]+/g,' ')} · ${prefix}`;
         const img=document.createElement('img');
         img.src=url;
         img.alt='';
@@ -930,7 +994,9 @@ function appendExternalIconTools(grid,targetObject=null){
         img.draggable=false;
         const label=document.createElement('span');
         label.textContent=name.replace(/[-_]+/g,' ');
-        b.append(img,label);
+        const meta=document.createElement('small');
+        meta.textContent=prefix;
+        b.append(img,label,meta);
         b.addEventListener('click',()=>usePickedImage(targetObject,url));
         results.appendChild(b);
       }
@@ -2075,13 +2141,7 @@ function bindDragHandleMenuExclusion(handle){
   });
 }
 
-function startDragHandle(e, payload){
-  e.preventDefault();
-  e.stopPropagation();
-  const captureTarget=e.currentTarget;
-  if(captureTarget?.setPointerCapture){
-    try{ captureTarget.setPointerCapture(e.pointerId); }catch(_){ }
-  }
+function beginBranchDrag(payload,{pointerId=null,captureTarget=null,touchId=null}={}){
   if(hideTimer) clearTimeout(hideTimer);
   if(activeGroup){ activeGroup.classList.remove('visible'); activeGroup=null; }
   const dx=payload.defaultX-payload.startX;
@@ -2092,10 +2152,30 @@ function startDragHandle(e, payload){
     ux:dx/dist,
     uy:dy/dist,
     baseDistance:dist,
-    pointerId:e.pointerId,
-    captureTarget
+    pointerId,
+    captureTarget,
+    touchId
   };
+  activeBranchTouchId = touchId;
   document.body.classList.add('dragging-branch');
+}
+
+function startDragHandle(e, payload){
+  e.preventDefault();
+  e.stopPropagation();
+  const captureTarget=e.currentTarget;
+  if(captureTarget?.setPointerCapture){
+    try{ captureTarget.setPointerCapture(e.pointerId); }catch(_){ }
+  }
+  beginBranchDrag(payload,{pointerId:e.pointerId,captureTarget,touchId:null});
+}
+
+function startTouchDragHandle(e,payload){
+  const touch=e.changedTouches?.[0];
+  if(!touch) return;
+  if(e.cancelable) e.preventDefault();
+  e.stopPropagation();
+  beginBranchDrag(payload,{pointerId:null,captureTarget:null,touchId:touch.identifier});
 }
 
 function makeTouchDragZone(x,y,r,payload){
@@ -2106,6 +2186,7 @@ function makeTouchDragZone(x,y,r,payload){
   });
   bindDragHandleMenuExclusion(zone);
   zone.addEventListener('pointerdown',e=>startDragHandle(e,payload));
+  zone.addEventListener('touchstart',e=>startTouchDragHandle(e,payload),{passive:false});
   svg.appendChild(zone);
   return zone;
 }
@@ -2126,6 +2207,7 @@ function drawNodeDragHandle(branch,node,x,y,parentX,parentY,defaultTarget,color,
   });
   bindDragHandleMenuExclusion(handle);
   handle.addEventListener('pointerdown',e=>startDragHandle(e,payload));
+  handle.addEventListener('touchstart',e=>startTouchDragHandle(e,payload),{passive:false});
   const title=svgEl('title');
   title.textContent='Maintenir et faire glisser pour régler la longueur et la direction';
   handle.appendChild(title);
@@ -2183,6 +2265,7 @@ function drawMainDragHandle(branch,x,y,geometry){
   });
   bindDragHandleMenuExclusion(handle);
   handle.addEventListener('pointerdown',e=>startDragHandle(e,payload));
+  handle.addEventListener('touchstart',e=>startTouchDragHandle(e,payload),{passive:false});
   const title=svgEl('title');
   title.textContent='Maintenir et faire glisser pour régler librement la longueur et la direction';
   handle.appendChild(title);
@@ -2310,14 +2393,10 @@ function render(){
 document.addEventListener('dragstart',e=>{ if(e.target.closest?.('.free-icon-item, .free-icon-visual, .free-icon-overlay')) e.preventDefault(); },true);
 document.addEventListener('selectstart',e=>{ if(e.target.closest?.('.free-icon-item, .free-icon-visual, .free-icon-overlay') || freeIconDrag) e.preventDefault(); },true);
 
-window.addEventListener('pointermove',e=>{
+function updateBranchDragPosition(clientX,clientY){
   if(!dragState) return;
-  if(dragState.pointerId!=null && e.pointerId!==dragState.pointerId) return;
-  if(e.cancelable) e.preventDefault();
   const rect=mindmap.getBoundingClientRect();
-  const px=e.clientX-rect.left, py=e.clientY-rect.top;
-  const projected=(px-dragState.startX)*dragState.ux+(py-dragState.startY)*dragState.uy;
-  const ratio=projected/dragState.baseDistance;
+  const px=clientX-rect.left, py=clientY-rect.top;
   if(dragState.type==='main'){
     const branch=findBranch(dragState.branchId);
     if(!branch) return;
@@ -2354,7 +2433,24 @@ window.addEventListener('pointermove',e=>{
     node.vectorY=clamp((safeY-dragState.startY)/H,-.48,.48);
   }
   render();
-});
+}
+
+window.addEventListener('pointermove',e=>{
+  if(!dragState) return;
+  if(dragState.pointerId!=null && e.pointerId!==dragState.pointerId) return;
+  if(e.cancelable) e.preventDefault();
+  updateBranchDragPosition(e.clientX,e.clientY);
+},{passive:false});
+
+window.addEventListener('touchmove',e=>{
+  if(!dragState || dragState.touchId==null) return;
+  const touch=[...(e.changedTouches||[])].find(t=>t.identifier===dragState.touchId)
+    || [...(e.touches||[])].find(t=>t.identifier===dragState.touchId);
+  if(!touch) return;
+  if(e.cancelable) e.preventDefault();
+  updateBranchDragPosition(touch.clientX,touch.clientY);
+},{passive:false, capture:true});
+
 function finishDrag(e){
   if(!dragState) return;
   if(e?.pointerId!=null && dragState.pointerId!=null && e.pointerId!==dragState.pointerId) return;
@@ -2369,11 +2465,24 @@ function finishDrag(e){
   }
   branchMenuHandleHover=false;
   branchMenuSuppressUntil=Date.now()+300;
+  activeBranchTouchId = null;
   document.body.classList.remove('dragging-branch');
   save();
 }
 window.addEventListener('pointerup',finishDrag);
 window.addEventListener('pointercancel',finishDrag);
+window.addEventListener('touchend',e=>{
+  if(!dragState || dragState.touchId==null) return;
+  const touch=[...(e.changedTouches||[])].find(t=>t.identifier===dragState.touchId);
+  if(!touch) return;
+  finishDrag({});
+},{passive:false, capture:true});
+window.addEventListener('touchcancel',e=>{
+  if(!dragState || dragState.touchId==null) return;
+  const touch=[...(e.changedTouches||[])].find(t=>t.identifier===dragState.touchId);
+  if(!touch) return;
+  finishDrag({});
+},{passive:false, capture:true});
 
 window.addEventListener('pointermove',updateFreeIconDrag,{passive:false});
 window.addEventListener('mousemove',e=>{ if(freeIconDrag) { try{ e.preventDefault(); }catch(_){ } clearBrowserSelection(); } }, true);
