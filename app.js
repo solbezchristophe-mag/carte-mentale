@@ -9,6 +9,7 @@ const controlsLayer = document.getElementById('branchControlsLayer');
 const editorLayer = document.getElementById('editorLayer');
 const addBranchButton = document.getElementById('addBranch');
 const resetButton = document.getElementById('resetMap');
+const savePdfButton = document.getElementById('savePdf');
 let freeIconLayer = document.getElementById('freeIconLayer');
 let freeIconFrontLayer = document.getElementById('freeIconFrontLayer');
 const freeIconOverlayLayer = document.getElementById('freeIconOverlayLayer');
@@ -28,6 +29,9 @@ function ensureFreeIconCanvas(){
   return canvas;
 }
 const addFreeIconButton = document.getElementById('addFreeIcon');
+const appMenu = document.getElementById('appMenu');
+const appMenuToggle = document.getElementById('appMenuToggle');
+const appMenuPanel = document.getElementById('appMenuPanel');
 
 function ensureFreeIconFrontCanvas(){
   if(freeIconFrontLayer && typeof freeIconFrontLayer.getContext === 'function') return freeIconFrontLayer;
@@ -111,20 +115,18 @@ const automaticColors = [
 
 
 const PRESET_COLOR_SWATCHES = [
-  '#000000','#7f7f7f','#880015','#ed1c24','#ff7f27','#fff200','#22b14c','#00a2e8',
-  '#3f48cc','#a349a4','#ffffff','#c3c3c3','#b97a57','#ffaec9','#ffc90e','#efe4b0',
-  '#b5e61d','#99d9ea','#7092be','#c8bfe7','#404040','#bfbfbf','#5c2e00','#8b0000',
-  '#d2691e','#d4af37','#2e8b57','#1e90ff','#483d8b','#800080','#f4f4f4','#e8d9c5'
+  '#c85f73','#5d8eaa','#7f9a72','#c88c67',
+  '#8f79a3','#5f9b98','#b79d59','#8b667f',
+  '#d87288','#6d9ab3','#8baa7d','#d49a74',
+  '#9a84b0','#6aa8a4','#c2aa66','#9b748c'
 ];
 
 function buildColorPaletteMarkup(selectedColor,label){
-  const current=String(selectedColor||'#000000').toLowerCase();
+  const current=String(selectedColor||'').toLowerCase();
   const swatches=PRESET_COLOR_SWATCHES.map(color=>`<button type="button" class="color-swatch${color.toLowerCase()===current?' active':''}" data-color="${color}" aria-label="${label} : ${color}" title="${color}" style="--swatch:${color}"></button>`).join('');
   return `
     <div class="color-wrap" title="${label}">
-      <button type="button" class="color-palette-button" aria-label="${label}" style="--current-color:${current}">
-        <span class="color-current-chip" aria-hidden="true"></span>
-      </button>
+      <button type="button" class="color-palette-button" aria-label="${label}">🎨</button>
       <div class="color-palette" role="listbox" aria-label="${label}">${swatches}</div>
     </div>`;
 }
@@ -226,6 +228,22 @@ let reopenMenuKey = null;
 function save() {
   state.centre = centreInput.value;
   localStorage.setItem(STORAGE_KEY, JSON.stringify({state,nextId}));
+}
+
+function setAppMenuOpen(open) {
+  if(!appMenu || !appMenuToggle || !appMenuPanel) return;
+  appMenu.classList.toggle('open', !!open);
+  appMenuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  appMenuPanel.hidden = !open;
+}
+
+function closeAppMenu() {
+  setAppMenuOpen(false);
+}
+
+function toggleAppMenu() {
+  if(!appMenu) return;
+  setAppMenuOpen(!appMenu.classList.contains('open'));
 }
 
 function normalizeNodeLengths(nodes) {
@@ -364,6 +382,27 @@ if(addBranchButton){
     }
   },true);
 }
+
+if(appMenuToggle){
+  appMenuToggle.addEventListener('pointerdown',e=>{
+    e.stopPropagation();
+  },true);
+  appMenuToggle.addEventListener('click',e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    toggleAppMenu();
+  },true);
+}
+
+appMenuPanel?.addEventListener('pointerdown',e=>{
+  e.stopPropagation();
+},true);
+
+[addBranchButton, addFreeIconButton, savePdfButton, resetButton].forEach(btn=>{
+  btn?.addEventListener('click',()=>{
+    setTimeout(closeAppMenu,0);
+  },true);
+});
 
 function setBranchLength(id,value){
   const b=findBranch(id); if(!b) return;
@@ -741,6 +780,7 @@ function addFreeIconData({glyph='',iconUrl=''}){
   state.freeIcons.push({id,glyph,iconUrl,x:.82,y:.18,size:72,rotation:0,flipH:false,flipV:false,keepBg:false,removeBg:!!iconUrl,layer:'back'});
   activeFreeIconId=id;
   save();
+  closeAppMenu();
   closeIconPicker();
   render();
   renderFreeIcons();
@@ -2032,25 +2072,24 @@ function editObjectText(object,x,y,color){
   input.value=object.text;
   input.setAttribute('autocomplete','off');
   input.setAttribute('autocapitalize','sentences');
+  input.setAttribute('spellcheck','true');
   input.style.left=`${clamp(x,135,innerWidth-135)}px`;
   input.style.top=`${clamp(y-28,55,innerHeight-50)}px`;
   input.style.setProperty('--editor-color',color);
   editorLayer.appendChild(input);
 
-  // Sur Android/Samsung, attendre la fin du cycle tactile avant de demander
-  // le focus évite que le clavier soit refermé par le même geste qui ouvre l'éditeur.
+  // Même comportement que le champ central « MON PROJET » :
+  // le curseur est libre et la sélection est entièrement native.
+  // L'utilisateur peut sélectionner un mot, une partie ou tout le texte
+  // avec la souris ou les poignées de sélection du navigateur tactile.
   requestAnimationFrame(()=>{
     setTimeout(()=>{
       if(!input.isConnected) return;
       try{ input.focus({preventScroll:true}); }catch(_){ input.focus(); }
-      // La sélection automatique est utile à la souris mais peut perturber certains
-      // claviers Android. Sur tactile on place simplement le curseur à la fin.
-      const coarse=window.matchMedia?.('(pointer: coarse)')?.matches;
-      if(coarse){
-        try{ input.setSelectionRange(input.value.length,input.value.length); }catch(_){ }
-      }else{
-        try{ input.select(); }catch(_){ }
-      }
+      try{
+        const end=input.value.length;
+        input.setSelectionRange(end,end);
+      }catch(_){ }
     },35);
   });
 
@@ -2070,29 +2109,27 @@ function editObjectText(object,x,y,color){
     render();
   };
 
+  // On bloque seulement la propagation vers la carte : on ne bloque jamais
+  // le comportement natif du champ, indispensable à la sélection tactile.
   input.addEventListener('pointerdown',e=>e.stopPropagation());
+  input.addEventListener('pointermove',e=>e.stopPropagation());
   input.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+  input.addEventListener('touchmove',e=>e.stopPropagation(),{passive:true});
+  input.addEventListener('click',e=>e.stopPropagation());
+  input.addEventListener('contextmenu',e=>e.stopPropagation());
   input.addEventListener('keydown',e=>{
     if(e.key==='Enter') finish(true);
     if(e.key==='Escape') finish(false);
   });
   input.addEventListener('blur',()=>{
-    // Ignore un blur très précoce provoqué par l'ouverture du clavier Android.
-    // Le prochain cycle rend le focus si le champ existe encore.
-    if(textEditingActive && input.isConnected && document.visibilityState==='visible'){
-      const elapsed=performance.now()-(input._editOpenedAt||0);
-      if(elapsed<500){
-        setTimeout(()=>{
-          if(textEditingActive && input.isConnected){
-            try{ input.focus({preventScroll:true}); }catch(_){ input.focus(); }
-          }
-        },60);
-        return;
-      }
-    }
-    finish(true);
+    // Sur Android/Samsung, le menu de sélection ou le clavier peut provoquer
+    // un blur transitoire. On attend brièvement avant de fermer l'éditeur.
+    setTimeout(()=>{
+      if(done || !input.isConnected) return;
+      if(document.activeElement===input) return;
+      finish(true);
+    },120);
   });
-  input._editOpenedAt=performance.now();
 }
 
 function fanTargets(parentX,parentY,baseAngle,count,level,layout,slotIndex){
@@ -2407,24 +2444,48 @@ function renderBranch(branch,layout){
 }
 
 function fitCentreTitle(){
-  // Le bloc de titre reste centré sur les deux axes. Sa hauteur augmente
-  // symétriquement lorsqu'il passe sur plusieurs lignes.
-  const max=isPhoneLike()?14:(isTabletLike()?17:20);
-  const min=isPhoneLike()?9:11;
-  const maxHeight=Math.max(58,centre.clientHeight-46);
+  // Le texte central reste réellement centré, quelle que soit sa longueur.
+  // Le bouton « Ajouter une branche » est maintenant hors de la zone de texte.
+  const phone=isPhoneLike();
+  const tablet=isTabletLike();
+  const max=phone?15:(tablet?18:20);
+  const min=phone?8:(tablet?9:10);
+  const baseHeight=phone
+    ? clamp(window.innerHeight*.12,92,120)
+    : tablet
+      ? clamp(window.innerHeight*.13,106,138)
+      : clamp(window.innerHeight*.145,120,152);
+  const maxCentreHeight=phone?180:(tablet?205:225);
+
+  // On repart toujours de la taille normale lorsque le texte raccourcit.
+  centre.style.height=`${baseHeight}px`;
   centreInput.style.height='auto';
+  centreInput.style.lineHeight='1.08';
+
   let size=max;
   centreInput.style.fontSize=`${size}px`;
-  centreInput.style.lineHeight='1.04';
-  centreInput.style.height=`${Math.min(centreInput.scrollHeight,maxHeight)}px`;
-  while(size>min && centreInput.scrollHeight>maxHeight){
+
+  // D'abord, on laisse la bulle grandir de façon symétrique autour de son centre.
+  let wanted=Math.ceil(centreInput.scrollHeight+28);
+  if(wanted>baseHeight){
+    centre.style.height=`${Math.min(maxCentreHeight,wanted)}px`;
+  }
+
+  // Ensuite seulement, si le contenu est encore trop grand, on réduit progressivement.
+  let available=Math.max(60,centre.clientHeight-24);
+  while(size>min && centreInput.scrollHeight>available){
     size-=1;
     centreInput.style.fontSize=`${size}px`;
     centreInput.style.height='auto';
-    centreInput.style.height=`${Math.min(centreInput.scrollHeight,maxHeight)}px`;
+    wanted=Math.ceil(centreInput.scrollHeight+28);
+    if(wanted>centre.clientHeight && centre.clientHeight<maxCentreHeight){
+      centre.style.height=`${Math.min(maxCentreHeight,wanted)}px`;
+    }
+    available=Math.max(60,centre.clientHeight-24);
   }
-  const natural=Math.max(size*1.15,Math.min(centreInput.scrollHeight,maxHeight));
-  centreInput.style.height=`${natural}px`;
+
+  const natural=Math.min(centreInput.scrollHeight,available);
+  centreInput.style.height=`${Math.max(size*1.2,natural)}px`;
 }
 
 
@@ -2559,12 +2620,13 @@ document.addEventListener('dragstart',e=>{
 });
 document.addEventListener('pointerdown',e=>{
   if(freeIconDrag) return;
-  if(e.target.closest?.('.free-icon-visual, .free-icon-overlay, #iconPicker, #addFreeIcon')) return;
+  if(e.target.closest?.('.free-icon-visual, .free-icon-overlay, #iconPicker, #appMenu')) return;
   if(activeFreeIconId!==null){ activeFreeIconId=null; renderFreeIcons(); }
 });
 addFreeIconButton?.addEventListener('click',openFreeIconPicker);
 
 document.addEventListener('pointerdown',e=>{
+  if(appMenu && !appMenu.contains(e.target)) closeAppMenu();
   if(e.target.closest?.('.branch-editor')) return;
   if(!activeGroup) return;
   if(document.body.classList.contains('dragging-branch') || document.body.classList.contains('dragging-free-icon')) return;
@@ -2575,10 +2637,32 @@ document.addEventListener('pointerdown',e=>{
 });
 
 centreInput.addEventListener('input',()=>{fitCentreTitle();state.centre=centreInput.value;save();});
+
+function saveProjectAsPdf(){
+  // Valide d'abord un éventuel texte en cours d'édition.
+  try{ document.activeElement?.blur?.(); }catch(_){ }
+  closeIconPicker();
+  if(activeGroup){ activeGroup.classList.remove('visible'); activeGroup=null; }
+  document.body.classList.add('printing-map');
+  // Le dialogue natif permet ensuite de choisir « Enregistrer au format PDF ».
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>window.print());
+  });
+}
+
+savePdfButton?.addEventListener('click',saveProjectAsPdf);
+window.addEventListener('afterprint',()=>{
+  document.body.classList.remove('printing-map');
+});
 resetButton.addEventListener('click',()=>{
+  closeAppMenu();
   if(!confirm('Effacer toute la carte mentale ?')) return;
   state={centre:'MON PROJET',branches:[],freeIcons:[]}; nextId=1; activeFreeIconId=null; freeIconDrag=null; centreInput.value=state.centre; save(); render(); renderFreeIcons(); requestAnimationFrame(renderFreeIcons);
 });
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeAppMenu();
+});
+
 let resizeRenderTimer=null;
 window.addEventListener('resize',()=>{
   // L'ouverture/fermeture du clavier virtuel Android déclenche resize.

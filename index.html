@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Carte mentale interactive — version propre</title>
+  <title>Carte mentale interactive</title>
   <link rel="stylesheet" href="styles.css?v=20260913-clean" />
 </head>
 <body>
@@ -17,10 +17,19 @@
          Il reste non interactif : les branches gardent toujours la priorité souris. -->
     <canvas id="freeIconFrontLayer" aria-label="Icônes libres premier plan"></canvas>
 
+    <div id="appMenu" class="app-menu" aria-label="Actions du projet">
+      <button id="appMenuToggle" class="app-menu-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="appMenuPanel">☰ Menu</button>
+      <div id="appMenuPanel" class="app-menu-panel" hidden>
+        <button id="addBranch" class="add-main-button action-button action-button-primary" type="button">+ Ajouter une branche</button>
+        <button id="addFreeIcon" class="add-free-icon-button action-button" type="button">+ Icône</button>
+        <button id="savePdf" class="save-pdf-button action-button action-button-save" type="button" title="Enregistrer le projet en PDF">Enregistrer sous</button>
+        <button id="resetMap" class="reset-button action-button action-button-reset" type="button">Recommencer</button>
+      </div>
+    </div>
+
     <!-- Sujet central -->
     <section id="centre" class="centre" aria-label="Sujet central">
       <textarea id="centreInput" rows="3" spellcheck="false" aria-label="Nom du projet">MON PROJET</textarea>
-      <button id="addBranch" class="add-main-button" type="button">+ Ajouter une branche</button>
     </section>
 
     <!-- Calques d’interaction -->
@@ -29,8 +38,6 @@
     <div id="freeIconResizePreview" class="free-icon-resize-preview" aria-hidden="true"></div>
     <div id="editorLayer"></div>
 
-    <button id="addFreeIcon" class="add-free-icon-button" type="button">+ Icône</button>
-    <button id="resetMap" class="reset-button" type="button">Recommencer</button>
   </main>
 
   <!-- Fenêtre de sélection et de recherche d’icônes -->

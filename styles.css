@@ -4465,3 +4465,668 @@ body.editing-branch-text .drag-touch-zone {
 body.editing-branch-text #branchControlsLayer {
   pointer-events: none !important;
 }
+
+
+/* ============================================================
+   V28 — retour du panel couleur des premières versions
+   ============================================================ */
+
+.color-wrap {
+  position: relative !important;
+  width: 27px !important;
+  height: 27px !important;
+}
+
+.color-palette-button {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(53,86,97,.12) !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  background: #fff !important;
+  color: #506670 !important;
+  box-shadow: 0 3px 9px rgba(0,0,0,.14) !important;
+  cursor: pointer !important;
+  font: 800 13px/1 Arial,sans-serif !important;
+}
+
+.color-palette-button:hover,
+.color-palette-button:focus-visible {
+  transform: scale(1.06);
+  outline: none;
+}
+
+.color-current-chip {
+  display: none !important;
+}
+
+.color-palette {
+  position: absolute !important;
+  left: 50% !important;
+  top: calc(100% + 8px) !important;
+  transform: translateX(-50%) scale(.98) !important;
+  width: 118px !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 7px !important;
+  padding: 9px !important;
+  border-radius: 14px !important;
+  background: rgba(255,255,255,.98) !important;
+  box-shadow: 0 10px 26px rgba(30,63,72,.16) !important;
+  border: 1px solid rgba(106,141,150,.14) !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease, transform .12s ease;
+  z-index: 40;
+}
+
+.color-wrap.open .color-palette {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) scale(1) !important;
+}
+
+.color-swatch {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  border: 2px solid rgba(255,255,255,.96) !important;
+  background: var(--swatch) !important;
+  box-shadow: 0 0 0 1px rgba(30,63,72,.12), 0 2px 5px rgba(0,0,0,.10) !important;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-swatch:hover,
+.color-swatch:focus-visible {
+  transform: scale(1.10);
+  outline: none;
+}
+
+.color-swatch.active {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(53,86,97,.18), 0 0 0 4px rgba(255,255,255,.92), 0 2px 5px rgba(0,0,0,.10) !important;
+}
+
+.child-control-group .color-wrap {
+  width: 25px !important;
+  height: 25px !important;
+}
+
+.child-control-group .color-palette-button {
+  width: 25px !important;
+  height: 25px !important;
+  font-size: 12px !important;
+}
+
+@media (max-width:820px) {
+  .color-wrap {
+    width: 31px !important;
+    height: 31px !important;
+  }
+
+  .child-control-group .color-wrap {
+    width: 31px !important;
+    height: 31px !important;
+  }
+
+  .color-palette-button,
+  .child-control-group .color-palette-button {
+    width: 31px !important;
+    height: 31px !important;
+    font-size: 14px !important;
+  }
+
+  .color-palette {
+    width: 126px !important;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+
+  .color-swatch {
+    width: 21px !important;
+    height: 21px !important;
+  }
+}
+
+
+/* ============================================================
+   V29 — centre auto-adaptatif + bouton dégagé du texte
+   ============================================================ */
+
+.centre {
+  overflow: visible !important;
+  height: auto;
+  transition: height .16s ease, min-height .16s ease;
+}
+
+.centre textarea {
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%,-50%) !important;
+  width: 84% !important;
+  max-height: calc(100% - 20px) !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  text-align: center !important;
+  text-align-last: center !important;
+  vertical-align: middle;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  line-height: 1.08 !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+.add-main-button {
+  top: auto !important;
+  bottom: -18px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 4 !important;
+  max-width: 92% !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width:1100px) {
+  .add-main-button {
+    bottom: -17px !important;
+  }
+}
+
+@media (max-width:820px) {
+  .centre textarea {
+    width: 82% !important;
+  }
+  .add-main-button {
+    bottom: -16px !important;
+  }
+}
+
+
+/* ============================================================
+   V30 — sélection de texte native visible (souris + tactile)
+   ============================================================ */
+
+body.editing-branch-text .branch-editor {
+  touch-action: auto !important;
+  -ms-touch-action: auto !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  caret-color: #315f74 !important;
+}
+
+body.editing-branch-text .branch-editor::selection {
+  background: rgba(53, 132, 176, .34) !important;
+  color: #173846 !important;
+}
+
+body.editing-branch-text .branch-editor::-moz-selection {
+  background: rgba(53, 132, 176, .34) !important;
+  color: #173846 !important;
+}
+
+.branch-editor-select-all {
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 10002;
+  border: 1px solid rgba(73,112,123,.18);
+  border-radius: 14px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,.98);
+  color: #496a75;
+  box-shadow: 0 4px 12px rgba(29,63,74,.13);
+  font: 500 12px/1.1 "Avenir Next","Segoe UI",Arial,sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.branch-editor-select-all:active {
+  transform: translateX(-50%) scale(.97);
+}
+
+body.editing-branch-text #editorLayer {
+  pointer-events: none;
+}
+
+body.editing-branch-text #editorLayer .branch-editor,
+body.editing-branch-text #editorLayer .branch-editor-select-all {
+  pointer-events: auto;
+}
+
+@media (pointer: coarse), (hover: none) {
+  .branch-editor-select-all {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+/* Sélection visible également dans le texte central */
+#centreInput {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  touch-action: auto !important;
+  caret-color: #315f74 !important;
+}
+#centreInput::selection {
+  background: rgba(53,132,176,.34) !important;
+  color: #173846 !important;
+}
+#centreInput::-moz-selection {
+  background: rgba(53,132,176,.34) !important;
+  color: #173846 !important;
+}
+
+
+/* ============================================================
+   V31 — sélection native identique à « MON PROJET » partout
+   ============================================================ */
+
+.branch-editor-select-all {
+  display: none !important;
+}
+
+body.editing-branch-text .branch-editor,
+.branch-editor {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  touch-action: auto !important;
+  -ms-touch-action: auto !important;
+  cursor: text !important;
+  caret-color: #315f74 !important;
+  -webkit-tap-highlight-color: rgba(53,132,176,.12);
+}
+
+body.editing-branch-text .branch-editor::selection,
+.branch-editor::selection {
+  background: rgba(53,132,176,.34) !important;
+  color: #173846 !important;
+}
+
+body.editing-branch-text .branch-editor::-moz-selection,
+.branch-editor::-moz-selection {
+  background: rgba(53,132,176,.34) !important;
+  color: #173846 !important;
+}
+
+body.editing-branch-text #editorLayer {
+  pointer-events: none !important;
+}
+
+body.editing-branch-text #editorLayer .branch-editor {
+  pointer-events: auto !important;
+}
+
+body.editing-branch-text .main-drag-handle,
+body.editing-branch-text .node-drag-handle,
+body.editing-branch-text .drag-touch-zone,
+body.editing-branch-text .branch-hit {
+  pointer-events: none !important;
+}
+
+
+/* ============================================================
+   V31 — bouton ajouter une branche déplacé en haut à droite
+   ============================================================ */
+
+.add-main-button {
+  position: fixed !important;
+  top: 14px !important;
+  right: 16px !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  z-index: 221 !important;
+  max-width: min(260px, calc(100vw - 32px)) !important;
+  white-space: nowrap !important;
+}
+
+.add-free-icon-button {
+  top: 58px !important;
+  right: 16px !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 220 !important;
+}
+
+@media (max-width: 1100px) {
+  .add-main-button {
+    top: 12px !important;
+    right: 14px !important;
+  }
+
+  .add-free-icon-button {
+    top: 54px !important;
+    right: 14px !important;
+  }
+}
+
+@media (max-width: 820px) {
+  .add-main-button {
+    top: 10px !important;
+    right: 12px !important;
+    max-width: min(235px, calc(100vw - 24px)) !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .add-free-icon-button {
+    top: 50px !important;
+    right: 12px !important;
+    left: auto !important;
+    bottom: auto !important;
+  }
+}
+
+
+/* ============================================================
+   V32 — actions harmonisées + export PDF
+   ============================================================ */
+
+.action-button {
+  width: 172px !important;
+  min-height: 36px !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px 12px !important;
+  border-radius: 18px !important;
+  font-family: "Avenir Next","Segoe UI",Arial,sans-serif !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.15 !important;
+  letter-spacing: .01em !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+.add-main-button.action-button-primary {
+  top: 14px !important;
+  right: 16px !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 172px !important;
+  color: #fff !important;
+  font-weight: 500 !important;
+}
+
+.add-free-icon-button.action-button {
+  position: fixed !important;
+  top: 58px !important;
+  right: 16px !important;
+  left: auto !important;
+  bottom: auto !important;
+  width: 172px !important;
+}
+
+.save-pdf-button {
+  position: fixed !important;
+  right: 16px !important;
+  bottom: 58px !important;
+  z-index: 221 !important;
+  border: 1px solid rgba(82,123,130,.16) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(246,249,250,.96)) !important;
+  color: #526c74 !important;
+  box-shadow: 0 4px 13px rgba(54,75,80,.10) !important;
+  cursor: pointer !important;
+}
+
+.save-pdf-button:hover,
+.save-pdf-button:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 17px rgba(54,75,80,.14) !important;
+  outline: none;
+}
+
+.reset-button.action-button-reset {
+  position: fixed !important;
+  right: 16px !important;
+  bottom: 14px !important;
+  left: auto !important;
+  top: auto !important;
+  width: 172px !important;
+  color: #687b81 !important;
+  font-weight: 500 !important;
+}
+
+@media (max-width:1100px) {
+  .action-button,
+  .add-main-button.action-button-primary,
+  .add-free-icon-button.action-button,
+  .save-pdf-button,
+  .reset-button.action-button-reset {
+    width: 164px !important;
+  }
+
+  .add-main-button.action-button-primary {
+    top: 12px !important;
+    right: 14px !important;
+  }
+
+  .add-free-icon-button.action-button {
+    top: 54px !important;
+    right: 14px !important;
+  }
+
+  .save-pdf-button {
+    right: 14px !important;
+    bottom: 54px !important;
+  }
+
+  .reset-button.action-button-reset {
+    right: 14px !important;
+    bottom: 12px !important;
+  }
+}
+
+@media (max-width:820px) {
+  .action-button,
+  .add-main-button.action-button-primary,
+  .add-free-icon-button.action-button,
+  .save-pdf-button,
+  .reset-button.action-button-reset {
+    width: 150px !important;
+    min-height: 34px !important;
+    font-size: 12px !important;
+    padding: 7px 10px !important;
+  }
+
+  .add-main-button.action-button-primary {
+    top: 10px !important;
+    right: 12px !important;
+  }
+
+  .add-free-icon-button.action-button {
+    top: 50px !important;
+    right: 12px !important;
+    left: auto !important;
+    bottom: auto !important;
+  }
+
+  .save-pdf-button {
+    right: 12px !important;
+    bottom: 50px !important;
+  }
+
+  .reset-button.action-button-reset {
+    right: 12px !important;
+    bottom: 10px !important;
+  }
+}
+
+@page {
+  size: landscape;
+  margin: 8mm;
+}
+
+@media print {
+  html, body {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  #mindmap {
+    position: relative !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    background: #fff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .action-button,
+  #branchControlsLayer,
+  #freeIconOverlayLayer,
+  #freeIconResizePreview,
+  #editorLayer,
+  #iconPicker,
+  .control-group,
+  .child-control-group,
+  .main-drag-handle,
+  .node-drag-handle,
+  .drag-touch-zone {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .centre,
+  #connections,
+  #freeIconLayer,
+  #freeIconFrontLayer {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+
+/* ============================================================
+   V14 — menu déroulant actions en haut à gauche
+   ============================================================ */
+
+.app-menu {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 240;
+}
+
+.app-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 124px;
+  min-height: 40px;
+  padding: 10px 14px;
+  border: 1px solid rgba(86,116,126,.16);
+  border-radius: 16px;
+  background: rgba(255,255,255,.96);
+  color: #355661;
+  box-shadow: 0 8px 24px rgba(25,56,70,.12);
+  font: 600 15px/1.2 "Avenir Next","Segoe UI",Arial,sans-serif;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.app-menu-toggle:hover,
+.app-menu-toggle:focus-visible {
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.app-menu.open .app-menu-toggle {
+  border-color: rgba(95,126,135,.30);
+  box-shadow: 0 10px 28px rgba(25,56,70,.16);
+}
+
+.app-menu-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: min(250px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(106,141,150,.14);
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 14px 34px rgba(23,52,66,.16);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.app-menu-panel[hidden] {
+  display: none !important;
+}
+
+.app-menu-panel .action-button {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  white-space: normal !important;
+  justify-content: center;
+}
+
+#centre {
+  padding-top: 26px;
+}
+
+@media (max-width: 820px) {
+  .app-menu {
+    top: 10px;
+    left: 10px;
+  }
+
+  .app-menu-toggle {
+    min-width: 116px;
+    min-height: 38px;
+    padding: 9px 13px;
+    font-size: 14px;
+  }
+
+  .app-menu-panel {
+    width: min(240px, calc(100vw - 20px));
+    gap: 9px;
+    padding: 11px;
+    border-radius: 18px;
+  }
+
+  .app-menu-panel .action-button {
+    min-height: 40px !important;
+  }
+
+  #centre {
+    padding-top: 20px;
+  }
+}
+
+@media print {
+  .app-menu {
+    display: none !important;
+  }
+}
