@@ -98,15 +98,63 @@ const VISUAL_SIZES = {
 };
 
 const automaticColors = [
-  '#ed2f68', // 1 rose - haut droite
-  '#178bd4', // 2 bleu - milieu droite
-  '#49ad42', // 3 vert - bas droite
-  '#ff8124', // 4 orange - bas gauche
-  '#7446b7', // 5 violet - milieu gauche
-  '#139d98', // 6 turquoise - haut gauche
-  '#e0a51d', // 7 jaune - haut
-  '#7b35c8'  // 8 violet - bas
+  '#c85f73', // 1 rose poudré
+  '#5d8eaa', // 2 bleu doux
+  '#7f9a72', // 3 vert sauge
+  '#c88c67', // 4 terre cuite
+  '#8f79a3', // 5 mauve
+  '#5f9b98', // 6 turquoise grisé
+  '#b79d59', // 7 ocre doux
+  '#8b667f'  // 8 prune douce
 ];
+
+
+
+const PRESET_COLOR_SWATCHES = [
+  '#c85f73','#5d8eaa','#7f9a72','#c88c67',
+  '#8f79a3','#5f9b98','#b79d59','#8b667f',
+  '#d87288','#6d9ab3','#8baa7d','#d49a74',
+  '#9a84b0','#6aa8a4','#c2aa66','#9b748c'
+];
+
+function buildColorPaletteMarkup(selectedColor,label){
+  const current=String(selectedColor||'').toLowerCase();
+  const swatches=PRESET_COLOR_SWATCHES.map(color=>`<button type="button" class="color-swatch${color.toLowerCase()===current?' active':''}" data-color="${color}" aria-label="${label} : ${color}" title="${color}" style="--swatch:${color}"></button>`).join('');
+  return `
+    <div class="color-wrap" title="${label}">
+      <button type="button" class="color-palette-button" aria-label="${label}">🎨</button>
+      <div class="color-palette" role="listbox" aria-label="${label}">${swatches}</div>
+    </div>`;
+}
+
+function bindColorPalette(wrap,onPick){
+  if(!wrap) return;
+  const toggle=wrap.querySelector('.color-palette-button');
+  const panel=wrap.querySelector('.color-palette');
+  if(!toggle || !panel) return;
+
+  const close=()=>wrap.classList.remove('open');
+  const open=()=>{
+    document.querySelectorAll('.color-wrap.open').forEach(el=>{ if(el!==wrap) el.classList.remove('open'); });
+    wrap.classList.add('open');
+  };
+
+  wrap.addEventListener('pointerdown',e=>e.stopPropagation());
+  toggle.addEventListener('click',e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    if(wrap.classList.contains('open')) close(); else open();
+  });
+
+  panel.querySelectorAll('.color-swatch').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      onPick(btn.dataset.color);
+      close();
+    });
+  });
+}
 
 function deg(value) {
   return value * Math.PI / 180;
@@ -665,6 +713,141 @@ function compressPersonalImage(file,callback){
   reader.readAsDataURL(file);
 }
 
+
+
+function normalizeIconSearchText(value){
+  return String(value||'')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim();
+}
+
+function iconSearchTerms(value){
+  return normalizeIconSearchText(value).split(/\s+/).filter(Boolean);
+}
+
+function buildLocalIconIndex(){
+  const entries=[];
+  for(const section of MINDMAP_ICONS){
+    const group=String(section.group||'').trim();
+    for(const [glyph,label] of (section.items||[])){
+      const labelText=String(label||'').trim();
+      const haystackParts=[group,labelText,normalizeFrenchIconQuery(labelText),normalizeFrenchIconQuery(group)];
+      const haystack=normalizeIconSearchText(haystackParts.join(' '));
+      entries.push({glyph,label:labelText,group,haystack});
+    }
+  }
+  return entries;
+}
+
+function scoreLocalIcon(entry,query){
+  const raw=String(query||'').trim();
+  if(!raw) return 0;
+  const qNorm=normalizeIconSearchText(raw);
+  if(!qNorm) return 0;
+  const qTerms=iconSearchTerms(raw);
+  const labelNorm=normalizeIconSearchText(entry.label);
+  const groupNorm=normalizeIconSearchText(entry.group);
+  let score=0;
+
+  if(labelNorm===qNorm) score+=180;
+  if(groupNorm===qNorm) score+=150;
+  if(labelNorm.startsWith(qNorm)) score+=110;
+  if(groupNorm.startsWith(qNorm)) score+=90;
+  if(entry.haystack.includes(qNorm)) score+=70;
+
+  for(const term of qTerms){
+    if(labelNorm===term) score+=80;
+    else if(labelNorm.startsWith(term)) score+=42;
+    else if(labelNorm.includes(term)) score+=24;
+
+    if(groupNorm===term) score+=60;
+    else if(groupNorm.startsWith(term)) score+=26;
+    else if(groupNorm.includes(term)) score+=14;
+
+    if(entry.haystack.includes(term)) score+=9;
+  }
+
+  return score;
+}
+
+function createLocalIconButton(entry,targetObject){
+  const btn=document.createElement('button');
+  btn.type='button';
+  btn.className='icon-choice';
+  btn.innerHTML=`<span class="icon-choice-glyph">${entry.glyph}</span><span>${entry.label}</span>`;
+  btn.title=`${entry.label} · ${entry.group}`;
+  if(targetObject.iconGlyph===entry.glyph) btn.classList.add('selected');
+  btn.addEventListener('click',()=>{
+    targetObject.iconGlyph=entry.glyph;
+    delete targetObject.iconUrl;
+    if(!targetObject.iconMode) targetObject.iconMode='both';
+    save(); closeIconPicker(); render();
+  });
+  return btn;
+}
+
+function appendLocalIconSearch(grid,targetObject){
+  const title=document.createElement('div');
+  title.className='icon-picker-section-title local-icon-search-title';
+  title.textContent='Recherche dans les icônes';
+  grid.appendChild(title);
+
+  const box=document.createElement('div');
+  box.className='local-icon-search';
+  box.innerHTML=`
+    <div class="local-icon-search-row">
+      <input type="search" class="local-icon-input" placeholder="Rechercher : santé, objectif, amour…" aria-label="Rechercher dans les icônes intégrées">
+      <button type="button" class="local-icon-clear" aria-label="Effacer la recherche">×</button>
+    </div>
+    <div class="local-icon-status">La recherche fonctionne aussi avec les mots français.</div>
+    <div class="local-icon-results"></div>`;
+  grid.appendChild(box);
+
+  const input=box.querySelector('.local-icon-input');
+  const clearBtn=box.querySelector('.local-icon-clear');
+  const status=box.querySelector('.local-icon-status');
+  const results=box.querySelector('.local-icon-results');
+  const localIndex=buildLocalIconIndex();
+
+  const renderMatches=()=>{
+    const q=input.value.trim();
+    results.innerHTML='';
+    if(!q){
+      box.classList.remove('has-results');
+      status.textContent='La recherche fonctionne aussi avec les mots français.';
+      clearBtn.disabled=true;
+      return;
+    }
+    clearBtn.disabled=false;
+    const matches=localIndex
+      .map(entry=>({entry,score:scoreLocalIcon(entry,q)}))
+      .filter(item=>item.score>0)
+      .sort((a,b)=>b.score-a.score || a.entry.label.localeCompare(b.entry.label,'fr'))
+      .slice(0,20);
+
+    if(!matches.length){
+      box.classList.remove('has-results');
+      status.textContent=`Aucune icône intégrée trouvée pour « ${q} ». Tu peux essayer la recherche Internet juste en dessous.`;
+      return;
+    }
+
+    box.classList.add('has-results');
+    status.textContent=`${matches.length} icône${matches.length>1?'s':''} intégrée${matches.length>1?'s':''} trouvée${matches.length>1?'s':''} pour « ${q} »`;
+    for(const item of matches){
+      results.appendChild(createLocalIconButton(item.entry,targetObject));
+    }
+  };
+
+  input.addEventListener('input',renderMatches);
+  input.addEventListener('search',renderMatches);
+  input.addEventListener('keydown',e=>{ if(e.key==='Escape'){ input.value=''; renderMatches(); } });
+  clearBtn.addEventListener('click',()=>{ input.value=''; renderMatches(); input.focus(); });
+  renderMatches();
+}
+
 function appendExternalIconTools(grid,targetObject=null){
   const title=document.createElement('div');
   title.className='icon-picker-section-title external-icon-title';
@@ -730,7 +913,7 @@ function appendExternalIconTools(grid,targetObject=null){
 
       status.textContent=icons.length
         ? `${icons.length} icônes trouvées pour « ${q} » · recherche interprétée en français`
-        : `Aucune icône trouvée pour « ${q} »`;
+        : `Aucune icône Internet trouvée pour « ${q} ». Essaie aussi la recherche dans les icônes intégrées juste au-dessus.`;
 
       for(const iconName of icons){
         const [prefix,name]=String(iconName).split(':');
@@ -811,6 +994,7 @@ function chooseIcon(object){
   });
   grid.appendChild(bothBtn);
 
+  appendLocalIconSearch(grid,object);
   appendExternalIconTools(grid,object);
 
   for(const section of MINDMAP_ICONS){
@@ -1688,7 +1872,7 @@ function createMainControls(branch,x,y,side,startX,startY){
     <button class="dot-button font-down-button" title="Réduire la taille du texte de 25 %">A−</button>
     <button class="dot-button font-up-button" title="Agrandir la taille du texte de 25 %">A+</button>
     <button class="dot-button icon-button" title="Choisir une icône">▣</button>
-    <div class="color-wrap" title="Changer la couleur"><div class="color-button">🎨</div><input class="color-input" type="color" value="${branch.color}" aria-label="Couleur"></div>
+    ${buildColorPaletteMarkup(branch.color,'Changer la couleur')}
     <button class="dot-button delete-button" title="Supprimer">×</button>`;
   controlsLayer.appendChild(g);
   const add=g.querySelector('.add-button');
@@ -1700,7 +1884,7 @@ function createMainControls(branch,x,y,side,startX,startY){
   g.querySelector('.font-up-button').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();changeTextScale(branch,.25,menuKey);});
   g.querySelector('.icon-button').addEventListener('click',()=>chooseIcon(branch));
   g.querySelector('.delete-button').addEventListener('click',()=>deleteBranch(branch.id));
-  g.querySelector('.color-input').addEventListener('input',e=>changeColor(branch.id,e.target.value));
+  bindColorPalette(g.querySelector('.color-wrap'),color=>changeColor(branch.id,color));
   return g;
 }
 
@@ -1750,10 +1934,7 @@ function createChildControls(branch,node,x,y,parentX,parentY,color,side,level){
     <button class="dot-button font-down-button" title="Réduire la taille du texte de 25 %">A−</button>
     <button class="dot-button font-up-button" title="Agrandir la taille du texte de 25 %">A+</button>
     <button class="dot-button icon-button" title="Choisir une icône">▣</button>
-    <div class="color-wrap" title="Changer la couleur de cette idée">
-      <div class="color-button">🎨</div>
-      <input class="color-input" type="color" value="${color}" aria-label="Couleur de cette idée">
-    </div>
+    ${buildColorPaletteMarkup(color,'Changer la couleur de cette idée')}
     <button class="dot-button delete-button" title="Supprimer">×</button>`;
   controlsLayer.appendChild(g);
   const add=g.querySelector('.add-button');
@@ -1766,7 +1947,7 @@ function createChildControls(branch,node,x,y,parentX,parentY,color,side,level){
   g.querySelector('.font-down-button').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();changeTextScale(node,-.25,menuKey);});
   g.querySelector('.font-up-button').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();changeTextScale(node,.25,menuKey);});
   g.querySelector('.icon-button').addEventListener('click',()=>chooseIcon(node));
-  g.querySelector('.color-input').addEventListener('input',e=>changeNodeColor(branch.id,node.id,e.target.value));
+  bindColorPalette(g.querySelector('.color-wrap'),picked=>changeNodeColor(branch.id,node.id,picked));
   g.querySelector('.delete-button').addEventListener('click',()=>deleteChild(branch.id,node.id));
   return g;
 }
@@ -1897,19 +2078,44 @@ function bindDragHandleMenuExclusion(handle){
 function startDragHandle(e, payload){
   e.preventDefault();
   e.stopPropagation();
-  if(e.currentTarget?.setPointerCapture){
-    try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){ }
+  const captureTarget=e.currentTarget;
+  if(captureTarget?.setPointerCapture){
+    try{ captureTarget.setPointerCapture(e.pointerId); }catch(_){ }
   }
   if(hideTimer) clearTimeout(hideTimer);
   if(activeGroup){ activeGroup.classList.remove('visible'); activeGroup=null; }
   const dx=payload.defaultX-payload.startX;
   const dy=payload.defaultY-payload.startY;
   const dist=Math.hypot(dx,dy)||1;
-  dragState={...payload,ux:dx/dist,uy:dy/dist,baseDistance:dist};
+  dragState={
+    ...payload,
+    ux:dx/dist,
+    uy:dy/dist,
+    baseDistance:dist,
+    pointerId:e.pointerId,
+    captureTarget
+  };
   document.body.classList.add('dragging-branch');
 }
 
+function makeTouchDragZone(x,y,r,payload){
+  const zone=svgEl('circle',{
+    cx:x,cy:y,r,
+    fill:'transparent',
+    class:'drag-touch-zone'
+  });
+  bindDragHandleMenuExclusion(zone);
+  zone.addEventListener('pointerdown',e=>startDragHandle(e,payload));
+  svg.appendChild(zone);
+  return zone;
+}
+
 function drawNodeDragHandle(branch,node,x,y,parentX,parentY,defaultTarget,color,level){
+  const payload={
+    type:'node',branchId:branch.id,nodeId:node.id,
+    startX:parentX,startY:parentY,defaultX:defaultTarget.x,defaultY:defaultTarget.y
+  };
+  makeTouchDragZone(x,y,level===1?20:18,payload);
   const handle=svgEl('circle',{
     cx:x,cy:y,
     r:level===1?VISUAL_SIZES.handleRadius.idea:VISUAL_SIZES.handleRadius.subIdea,
@@ -1919,10 +2125,7 @@ function drawNodeDragHandle(branch,node,x,y,parentX,parentY,defaultTarget,color,
     class:'node-drag-handle'
   });
   bindDragHandleMenuExclusion(handle);
-  handle.addEventListener('pointerdown',e=>startDragHandle(e,{
-    type:'node',branchId:branch.id,nodeId:node.id,
-    startX:parentX,startY:parentY,defaultX:defaultTarget.x,defaultY:defaultTarget.y
-  }));
+  handle.addEventListener('pointerdown',e=>startDragHandle(e,payload));
   const title=svgEl('title');
   title.textContent='Maintenir et faire glisser pour régler la longueur et la direction';
   handle.appendChild(title);
@@ -1964,6 +2167,12 @@ function renderChildren(branch,nodes,parentX,parentY,color,level,baseAngle,layou
 }
 
 function drawMainDragHandle(branch,x,y,geometry){
+  const payload={
+    type:'main',branchId:branch.id,
+    startX:geometry.startX,startY:geometry.startY,
+    defaultX:geometry.point.x,defaultY:geometry.point.y
+  };
+  makeTouchDragZone(x,y,24,payload);
   const handle=svgEl('circle',{
     cx:x,cy:y,
     r:VISUAL_SIZES.handleRadius.main,
@@ -1973,11 +2182,7 @@ function drawMainDragHandle(branch,x,y,geometry){
     class:'main-drag-handle'
   });
   bindDragHandleMenuExclusion(handle);
-  handle.addEventListener('pointerdown',e=>startDragHandle(e,{
-    type:'main',branchId:branch.id,
-    startX:geometry.startX,startY:geometry.startY,
-    defaultX:geometry.point.x,defaultY:geometry.point.y
-  }));
+  handle.addEventListener('pointerdown',e=>startDragHandle(e,payload));
   const title=svgEl('title');
   title.textContent='Maintenir et faire glisser pour régler librement la longueur et la direction';
   handle.appendChild(title);
@@ -2107,6 +2312,8 @@ document.addEventListener('selectstart',e=>{ if(e.target.closest?.('.free-icon-i
 
 window.addEventListener('pointermove',e=>{
   if(!dragState) return;
+  if(dragState.pointerId!=null && e.pointerId!==dragState.pointerId) return;
+  if(e.cancelable) e.preventDefault();
   const rect=mindmap.getBoundingClientRect();
   const px=e.clientX-rect.left, py=e.clientY-rect.top;
   const projected=(px-dragState.startX)*dragState.ux+(py-dragState.startY)*dragState.uy;
@@ -2148,9 +2355,18 @@ window.addEventListener('pointermove',e=>{
   }
   render();
 });
-function finishDrag(){
+function finishDrag(e){
   if(!dragState) return;
+  if(e?.pointerId!=null && dragState.pointerId!=null && e.pointerId!==dragState.pointerId) return;
+  const finishedDrag=dragState;
   dragState=null;
+  if(finishedDrag.captureTarget?.releasePointerCapture && finishedDrag.pointerId!=null){
+    try{
+      if(finishedDrag.captureTarget.hasPointerCapture?.(finishedDrag.pointerId)){
+        finishedDrag.captureTarget.releasePointerCapture(finishedDrag.pointerId);
+      }
+    }catch(_){ }
+  }
   branchMenuHandleHover=false;
   branchMenuSuppressUntil=Date.now()+300;
   document.body.classList.remove('dragging-branch');

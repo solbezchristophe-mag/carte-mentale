@@ -3816,3 +3816,462 @@ body.dragging-free-icon .free-icon-overlay .free-icon-rotate {
     --tool-bubble-font: 15px;
   }
 }
+
+
+/* ============================================================
+   THÈME OXY’OSE — harmonie visuelle
+   Direction : calme, clarté, douceur, espace et relief discret.
+   ============================================================ */
+
+:root {
+  --oxy-paper: #fbf7f3;
+  --oxy-paper-2: #f4eee9;
+  --oxy-card: rgba(255,255,255,.94);
+  --oxy-ink: #29424a;
+  --oxy-muted: #73858a;
+  --oxy-accent: #6f9aa0;
+  --oxy-accent-deep: #527b82;
+  --oxy-line: rgba(79,107,114,.16);
+  --oxy-shadow: 0 10px 30px rgba(54,75,80,.10);
+  --oxy-shadow-soft: 0 5px 16px rgba(54,75,80,.08);
+
+  --paper: var(--oxy-paper);
+  --ink: var(--oxy-ink);
+  --centre: var(--oxy-accent);
+}
+
+body {
+  color: var(--oxy-ink) !important;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255,255,255,.96) 0 32%, rgba(251,247,243,.94) 67%, rgba(244,238,233,.92) 100%),
+    linear-gradient(180deg,#fdfaf7 0%,#f5efea 100%) !important;
+  font-family: "Avenir Next","Segoe UI",Arial,sans-serif !important;
+}
+
+#mindmap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: .42;
+  background-image:
+    radial-gradient(circle at 16% 18%, rgba(111,154,160,.08), transparent 19%),
+    radial-gradient(circle at 84% 78%, rgba(200,140,103,.055), transparent 22%);
+}
+
+.centre {
+  background: rgba(255,255,255,.96) !important;
+  border-color: var(--oxy-accent) !important;
+  border-width: 4px !important;
+  border-radius: 46% 54% 48% 52% / 54% 46% 54% 46% !important;
+  box-shadow: 0 12px 32px rgba(65,91,97,.12), inset 0 1px 0 rgba(255,255,255,.95) !important;
+}
+
+.centre::before {
+  opacity: .55 !important;
+  background: radial-gradient(circle at 34% 24%, rgba(255,255,255,.72), transparent 43%) !important;
+}
+
+.centre textarea {
+  color: var(--oxy-ink) !important;
+  font-family: Georgia,"Times New Roman",serif !important;
+  font-weight: 600 !important;
+  letter-spacing: .005em !important;
+  text-shadow: none !important;
+}
+
+.centre textarea:focus {
+  background: rgba(111,154,160,.06) !important;
+  box-shadow: 0 0 0 2px rgba(111,154,160,.14) !important;
+}
+
+.add-main-button {
+  background: var(--oxy-accent-deep) !important;
+  background-image: none !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.55) !important;
+  box-shadow: 0 5px 14px rgba(65,100,106,.17) !important;
+  font-family: "Avenir Next","Segoe UI",Arial,sans-serif !important;
+  letter-spacing: .01em;
+}
+
+.branch-text {
+  font-family: "Avenir Next","Trebuchet MS","Segoe UI",Arial,"Apple Color Emoji","Segoe UI Emoji",sans-serif !important;
+  font-weight: 650 !important;
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,.88)) !important;
+}
+
+.control-group,
+.child-control-group {
+  filter: drop-shadow(0 5px 12px rgba(54,75,80,.08)) !important;
+}
+
+.dot-button,
+.color-button,
+.free-icon-delete,
+.free-icon-flip,
+.free-icon-move,
+.free-icon-bg-toggle:not(.active),
+.icon-picker-close,
+.internet-icon-button,
+.external-icon-upload,
+.icon-choice,
+.reset-button,
+.add-free-icon-button {
+  background: rgba(255,255,255,.96) !important;
+  background-image: none !important;
+  border-color: rgba(82,123,130,.14) !important;
+  color: var(--oxy-ink) !important;
+  box-shadow: var(--oxy-shadow-soft) !important;
+}
+
+.dot-button:hover,
+.color-button:hover,
+.icon-choice:hover,
+.external-icon-upload:hover,
+.internet-icon-button:hover,
+.reset-button:hover,
+.add-free-icon-button:hover {
+  background: #fff !important;
+  box-shadow: 0 7px 18px rgba(54,75,80,.13) !important;
+}
+
+.add-button {
+  background: #fff !important;
+  color: var(--branch-color,var(--oxy-accent-deep)) !important;
+  border-color: color-mix(in srgb,var(--branch-color,var(--oxy-accent-deep)) 54%,#fff 46%) !important;
+}
+
+.delete-button,
+.free-icon-delete {
+  color: #ad5360 !important;
+}
+
+.free-icon-overlay .free-icon-rotate,
+.free-icon-overlay .free-icon-layer-toggle,
+.free-icon-overlay .free-icon-bg-toggle.active,
+.free-icon-overlay .free-icon-resize {
+  background: var(--oxy-accent-deep) !important;
+  background-image: none !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,.96) !important;
+}
+
+.icon-picker-backdrop {
+  background: rgba(45,61,65,.23) !important;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.icon-picker-panel {
+  background: rgba(253,250,247,.985) !important;
+  border: 1px solid rgba(82,123,130,.12) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 28px 70px rgba(52,71,75,.18) !important;
+}
+
+.icon-picker-header {
+  background: rgba(255,255,255,.62) !important;
+  border-bottom-color: rgba(82,123,130,.10) !important;
+}
+
+.icon-picker-title,
+.external-icon-title,
+.internet-icon-title {
+  color: var(--oxy-ink) !important;
+  font-family: Georgia,"Times New Roman",serif !important;
+  font-weight: 600 !important;
+}
+
+.icon-choice,
+.external-icon-upload,
+.internet-icon-search,
+.internet-icon-result,
+.branch-editor {
+  background: rgba(255,255,255,.94) !important;
+  border-color: rgba(82,123,130,.12) !important;
+  box-shadow: 0 5px 15px rgba(54,75,80,.065) !important;
+}
+
+.internet-icon-input,
+.branch-editor {
+  color: var(--oxy-ink) !important;
+  font-family: "Avenir Next","Segoe UI",Arial,sans-serif !important;
+}
+
+.reset-button,
+.add-free-icon-button {
+  color: #60757a !important;
+}
+
+.main-drag-handle,
+.node-drag-handle {
+  fill: #fffdfb !important;
+  filter: drop-shadow(0 2px 5px rgba(54,75,80,.13)) !important;
+}
+
+.free-icon-select-frame {
+  border-color: var(--oxy-accent) !important;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.90) !important;
+}
+
+.free-icon-resize-preview {
+  border-color: var(--oxy-accent) !important;
+}
+
+@media (max-width:820px) {
+  .centre {
+    border-width: 3.5px !important;
+    box-shadow: 0 9px 24px rgba(65,91,97,.11) !important;
+  }
+}
+
+
+/* ============================================================
+   TACTILE — déplacement continu et précis des branches
+   ============================================================ */
+.main-drag-handle,
+.node-drag-handle,
+.drag-touch-zone {
+  touch-action: none !important;
+  -ms-touch-action: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+.drag-touch-zone {
+  pointer-events: none;
+  cursor: grab;
+}
+
+@media (pointer: coarse), (hover: none) {
+  .drag-touch-zone {
+    pointer-events: all !important;
+  }
+
+  .main-drag-handle,
+  .node-drag-handle {
+    cursor: grab;
+  }
+
+  body.dragging-branch .drag-touch-zone,
+  body.dragging-branch .main-drag-handle,
+  body.dragging-branch .node-drag-handle {
+    cursor: grabbing;
+  }
+}
+
+
+/* ============================================================
+   V24 — retour du panel de couleurs + police du projet alignée
+   ============================================================ */
+
+.color-wrap {
+  position: relative !important;
+  width: 27px !important;
+  height: 27px !important;
+}
+
+.color-palette-button {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(53,86,97,.12) !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  background: #fff !important;
+  color: #506670 !important;
+  box-shadow: 0 3px 9px rgba(0,0,0,.14) !important;
+  cursor: pointer !important;
+  font: 800 13px/1 Arial,sans-serif !important;
+}
+
+.color-palette-button:hover,
+.color-palette-button:focus-visible {
+  transform: scale(1.06);
+  outline: none;
+}
+
+.color-palette {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%) scale(.98);
+  width: 118px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+  padding: 9px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 10px 26px rgba(30,63,72,.16);
+  border: 1px solid rgba(106,141,150,.14);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease, transform .12s ease;
+  z-index: 40;
+}
+
+.color-wrap.open .color-palette {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) scale(1);
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.96);
+  background: var(--swatch);
+  box-shadow: 0 0 0 1px rgba(30,63,72,.12), 0 2px 5px rgba(0,0,0,.10);
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-swatch:hover,
+.color-swatch:focus-visible {
+  transform: scale(1.10);
+  outline: none;
+}
+
+.color-swatch.active {
+  box-shadow: 0 0 0 2px rgba(53,86,97,.18), 0 0 0 4px rgba(255,255,255,.92), 0 2px 5px rgba(0,0,0,.10);
+}
+
+.child-control-group .color-wrap {
+  width: 25px !important;
+  height: 25px !important;
+}
+
+.child-control-group .color-palette-button {
+  font-size: 12px !important;
+}
+
+.centre textarea {
+  font-family: "Avenir Next","Segoe UI",Arial,sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: .01em !important;
+}
+
+@media (max-width:820px) {
+  .color-wrap {
+    width: 31px !important;
+    height: 31px !important;
+  }
+
+  .child-control-group .color-wrap {
+    width: 31px !important;
+    height: 31px !important;
+  }
+
+  .color-palette-button {
+    font-size: 14px !important;
+  }
+
+  .color-palette {
+    width: 126px;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .color-swatch {
+    width: 21px;
+    height: 21px;
+  }
+}
+
+
+/* ============================================================
+   V25 — recherche d’icônes en français améliorée
+   ============================================================ */
+
+.local-icon-search {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,251,.96));
+  border: 1px solid rgba(95,126,135,.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 5px 14px rgba(20,58,74,.06);
+}
+
+.local-icon-search-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.local-icon-input {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid rgba(95,126,135,.16);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+  color: #355661;
+  font: 600 14px/1.2 "Avenir Next","Segoe UI",Arial,sans-serif;
+  outline: none;
+  box-shadow: inset 0 1px 2px rgba(20,58,74,.05);
+}
+
+.local-icon-input:focus {
+  border-color: rgba(95,126,135,.28);
+  box-shadow: 0 0 0 2px rgba(111,154,160,.14), inset 0 1px 2px rgba(20,58,74,.05);
+}
+
+.local-icon-clear {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(95,126,135,.14);
+  border-radius: 50%;
+  background: #fff;
+  color: #627883;
+  font: 700 18px/1 Arial,sans-serif;
+  cursor: pointer;
+  box-shadow: 0 3px 9px rgba(0,0,0,.08);
+}
+
+.local-icon-clear:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.local-icon-status {
+  color: #637983;
+  font: 600 12px/1.35 "Avenir Next","Segoe UI",Arial,sans-serif;
+}
+
+.local-icon-results {
+  display: none;
+  grid-template-columns: repeat(auto-fill,minmax(86px,1fr));
+  gap: 10px;
+}
+
+.local-icon-search.has-results .local-icon-results {
+  display: grid;
+}
+
+@media (max-width: 820px) {
+  .local-icon-search {
+    padding: 11px;
+    border-radius: 16px;
+  }
+  .local-icon-input {
+    font-size: 16px;
+    padding: 11px 12px;
+  }
+  .local-icon-clear {
+    width: 36px;
+    height: 36px;
+  }
+  .local-icon-results {
+    grid-template-columns: repeat(auto-fill,minmax(82px,1fr));
+    gap: 8px;
+  }
+}

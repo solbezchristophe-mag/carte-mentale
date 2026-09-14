@@ -20,3 +20,7 @@ Fonctions conservées :
 - recherche d'icônes via Iconify
 
 Pour lancer : ouvrir index.html dans un navigateur moderne.
+
+
+THÈME OXY’OSE
+Cette édition harmonise l'interface avec l'univers visuel Oxy’Ose : tons ivoire, bleu-gris, accents doux, cartes arrondies et typographie plus éditoriale. Les couleurs de branches restent distinctes pour conserver leur fonction cognitive.
