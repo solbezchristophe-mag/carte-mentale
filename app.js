@@ -115,18 +115,20 @@ const automaticColors = [
 
 
 const PRESET_COLOR_SWATCHES = [
-  '#c85f73','#5d8eaa','#7f9a72','#c88c67',
-  '#8f79a3','#5f9b98','#b79d59','#8b667f',
-  '#d87288','#6d9ab3','#8baa7d','#d49a74',
-  '#9a84b0','#6aa8a4','#c2aa66','#9b748c'
+  '#000000','#7f7f7f','#880015','#ed1c24','#ff7f27','#fff200','#22b14c','#00a2e8',
+  '#3f48cc','#a349a4','#ffffff','#c3c3c3','#b97a57','#ffaec9','#ffc90e','#efe4b0',
+  '#b5e61d','#99d9ea','#7092be','#c8bfe7','#404040','#bfbfbf','#5c2e00','#8b0000',
+  '#d2691e','#d4af37','#2e8b57','#1e90ff','#483d8b','#800080','#f4f4f4','#e8d9c5'
 ];
 
 function buildColorPaletteMarkup(selectedColor,label){
-  const current=String(selectedColor||'').toLowerCase();
+  const current=String(selectedColor||'#000000').toLowerCase();
   const swatches=PRESET_COLOR_SWATCHES.map(color=>`<button type="button" class="color-swatch${color.toLowerCase()===current?' active':''}" data-color="${color}" aria-label="${label} : ${color}" title="${color}" style="--swatch:${color}"></button>`).join('');
   return `
     <div class="color-wrap" title="${label}">
-      <button type="button" class="color-palette-button" aria-label="${label}">🎨</button>
+      <button type="button" class="color-palette-button" aria-label="${label}" style="--current-color:${current}">
+        <span class="color-current-chip" aria-hidden="true"></span>
+      </button>
       <div class="color-palette" role="listbox" aria-label="${label}">${swatches}</div>
     </div>`;
 }
@@ -231,12 +233,8 @@ function save() {
 }
 
 function setAppMenuOpen(open) {
-  if(!appMenu || !appMenuToggle || !appMenuPanel) return;
-  const isOpen = !!open;
-  appMenu.classList.toggle('open', isOpen);
-  appMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-  appMenuPanel.hidden = !isOpen;
-  appMenuPanel.style.display = isOpen ? 'flex' : 'none';
+  if(!appMenu) return;
+  appMenu.open = !!open;
 }
 
 function closeAppMenu() {
@@ -245,7 +243,7 @@ function closeAppMenu() {
 
 function toggleAppMenu() {
   if(!appMenu) return;
-  setAppMenuOpen(!appMenu.classList.contains('open'));
+  appMenu.open = !appMenu.open;
 }
 
 function normalizeNodeLengths(nodes) {
@@ -385,29 +383,8 @@ if(addBranchButton){
   },true);
 }
 
-if(appMenuToggle){
-  const handleMenuToggle=(e)=>{
-    if(e?.cancelable) e.preventDefault();
-    e?.stopPropagation?.();
-    toggleAppMenu();
-  };
-  ['pointerdown','mousedown','touchstart'].forEach(evt=>{
-    appMenuToggle.addEventListener(evt,e=>{
-      e.stopPropagation();
-    },true);
-  });
-  appMenuToggle.addEventListener('click',handleMenuToggle,true);
-  appMenuToggle.addEventListener('touchend',handleMenuToggle,{capture:true, passive:false});
-}
-
-[appMenu, appMenuPanel].forEach(el=>{
-  if(!el) return;
-  ['pointerdown','mousedown','touchstart','click'].forEach(evt=>{
-    el.addEventListener(evt,e=>{
-      e.stopPropagation();
-    },true);
-  });
-});
+// Le menu utilise désormais <details>/<summary> natif pour une compatibilité maximale Safari/tactile.
+appMenuPanel?.addEventListener('click',e=>e.stopPropagation());
 
 [addBranchButton, addFreeIconButton, savePdfButton, resetButton].forEach(btn=>{
   btn?.addEventListener('click',()=>{
@@ -2637,11 +2614,13 @@ document.addEventListener('pointerdown',e=>{
   if(e.target.closest?.('.free-icon-visual, .free-icon-overlay, #iconPicker, #appMenu')) return;
   if(activeFreeIconId!==null){ activeFreeIconId=null; renderFreeIcons(); }
 });
-addFreeIconButton?.addEventListener('click',openFreeIconPicker);
 
 document.addEventListener('touchstart',e=>{
   if(appMenu && !appMenu.contains(e.target)) closeAppMenu();
 },{passive:true});
+document.addEventListener('click',e=>{
+  if(appMenu && !appMenu.contains(e.target)) closeAppMenu();
+},true);
 document.addEventListener('pointerdown',e=>{
   if(appMenu && !appMenu.contains(e.target)) closeAppMenu();
   if(e.target.closest?.('.branch-editor')) return;
@@ -2667,17 +2646,90 @@ function saveProjectAsPdf(){
   });
 }
 
-savePdfButton?.addEventListener('click',saveProjectAsPdf);
 window.addEventListener('afterprint',()=>{
   document.body.classList.remove('printing-map');
 });
-resetButton.addEventListener('click',()=>{
-  closeAppMenu();
-  if(!confirm('Effacer toute la carte mentale ?')) return;
-  state={centre:'MON PROJET',branches:[],freeIcons:[]}; nextId=1; activeFreeIconId=null; freeIconDrag=null; centreInput.value=state.centre; save(); render(); renderFreeIcons(); requestAnimationFrame(renderFreeIcons);
-});
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape') closeAppMenu();
+});
+
+
+function resetMindMap(){
+  closeAppMenu();
+  if(!confirm('Effacer toute la carte mentale ?')) return;
+  state={centre:'MON PROJET',branches:[],freeIcons:[]};
+  nextId=1;
+  activeFreeIconId=null;
+  freeIconDrag=null;
+  centreInput.value=state.centre;
+  save();
+  render();
+  renderFreeIcons();
+  requestAnimationFrame(renderFreeIcons);
+}
+
+function bindReliableMenuAction(button, action){
+  if(!button || typeof action!=='function') return;
+  let lastTouchTime = 0;
+
+  const runAction = (e) => {
+    if(e?.cancelable) e.preventDefault();
+    e?.stopPropagation?.();
+    e?.stopImmediatePropagation?.();
+    action();
+  };
+
+  button.addEventListener('touchend', e => {
+    lastTouchTime = Date.now();
+    runAction(e);
+  }, {capture:true, passive:false});
+
+  button.addEventListener('click', e => {
+    if(Date.now() - lastTouchTime < 700){
+      if(e?.cancelable) e.preventDefault();
+      e?.stopPropagation?.();
+      e?.stopImmediatePropagation?.();
+      return;
+    }
+    runAction(e);
+  }, true);
+
+  button.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar'){
+      runAction(e);
+    }
+  }, true);
+}
+
+bindReliableMenuAction(addBranchButton, ()=>{
+  try{
+    addMainBranch();
+  }catch(err){
+    console.error('Erreur ajout branche',err);
+    state.branches = Array.isArray(state.branches) ? state.branches : [];
+    const used=new Set(state.branches.map(b=>b.slot));
+    const slot=firstFreeSlot(used);
+    if(slot!=null && state.branches.length<MAX_MAIN_BRANCHES){
+      state.branches.push({id:uid(),slot,color:automaticColors[slot],text:`Branche ${branchNumberFromSlot(slot)}`,length:1,textScale:1,children:[]});
+      try{ save(); }catch(_){ }
+      try{ render(); }catch(_){ }
+    }
+  }
+  closeAppMenu();
+});
+
+bindReliableMenuAction(addFreeIconButton, ()=>{
+  closeAppMenu();
+  openFreeIconPicker();
+});
+
+bindReliableMenuAction(savePdfButton, ()=>{
+  closeAppMenu();
+  saveProjectAsPdf();
+});
+
+bindReliableMenuAction(resetButton, ()=>{
+  resetMindMap();
 });
 
 let resizeRenderTimer=null;
