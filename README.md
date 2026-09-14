@@ -18,3 +18,8 @@ Cette version est la nouvelle base de travail. Elle reprend la v39, nettoyée et
 ## Pour continuer
 
 Toutes les prochaines modifications doivent partir de cette version afin d’éviter de réintroduire d’anciens correctifs ou doublons.
+
+
+## Export PDF
+
+Le bouton **Enregistrer sous** crée maintenant un vrai fichier PDF, sans ouvrir la boîte de dialogue d’impression. L’export recadre automatiquement la page sur le contenu visible de la carte. Sur iPhone/iPad, la feuille de partage permet d’utiliser **Enregistrer dans Fichiers**.

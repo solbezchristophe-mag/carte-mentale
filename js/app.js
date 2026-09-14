@@ -2709,21 +2709,295 @@ centreInput.addEventListener('focus',()=>{
 centreInput.addEventListener('blur',()=>{ centreSelectAllOnFocus=true; });
 centreInput.addEventListener('input',()=>{fitCentreTitle();state.centre=centreInput.value;save();});
 
-function saveProjectAsPdf(){
-  // Valide d'abord un éventuel texte en cours d'édition.
-  try{ document.activeElement?.blur?.(); }catch(_){ }
-  closeIconPicker();
-  if(activeGroup){ activeGroup.classList.remove('visible'); activeGroup=null; }
-  document.body.classList.add('printing-map');
-  // Le dialogue natif permet ensuite de choisir « Enregistrer au format PDF ».
-  requestAnimationFrame(()=>{
-    requestAnimationFrame(()=>window.print());
+function getMindMapExportBounds(padding=36){
+  const mapRect=mindmap.getBoundingClientRect();
+  const boxes=[];
+  const addRect=rect=>{
+    if(!rect || rect.width<=0 || rect.height<=0) return;
+    boxes.push({
+      left:rect.left-mapRect.left,
+      top:rect.top-mapRect.top,
+      right:rect.right-mapRect.left,
+      bottom:rect.bottom-mapRect.top
+    });
+  };
+
+  addRect(centre?.getBoundingClientRect?.());
+
+  // On mesure uniquement les éléments réellement visibles de la carte.
+  connections?.querySelectorAll('path:not(.branch-hit), text, image, circle, ellipse, rect, polygon, polyline').forEach(el=>{
+    const style=getComputedStyle(el);
+    if(style.display==='none' || style.visibility==='hidden' || Number(style.opacity)===0) return;
+    addRect(el.getBoundingClientRect());
   });
+
+  // Les icônes libres sont dessinées sur un canvas plein écran : on calcule donc
+  // leur vraie emprise à partir de leurs coordonnées plutôt que d'exporter tout le canvas.
+  const mapW=Math.max(1,mapRect.width);
+  const mapH=Math.max(1,mapRect.height);
+  for(const icon of (state.freeIcons||[])){
+    const size=Math.max(28,Number(icon.size)||72);
+    const half=(size*Math.SQRT2)/2+6;
+    const cx=clamp(Number(icon.x)||.5,.03,.97)*mapW;
+    const cy=clamp(Number(icon.y)||.5,.04,.96)*mapH;
+    boxes.push({left:cx-half,top:cy-half,right:cx+half,bottom:cy+half});
+  }
+
+  if(!boxes.length){
+    return {x:0,y:0,width:mapW,height:mapH};
+  }
+
+  let left=Math.min(...boxes.map(b=>b.left));
+  let top=Math.min(...boxes.map(b=>b.top));
+  let right=Math.max(...boxes.map(b=>b.right));
+  let bottom=Math.max(...boxes.map(b=>b.bottom));
+
+  left=clamp(left-padding,0,mapW);
+  top=clamp(top-padding,0,mapH);
+  right=clamp(right+padding,0,mapW);
+  bottom=clamp(bottom+padding,0,mapH);
+
+  return {
+    x:left,
+    y:top,
+    width:Math.max(120,right-left),
+    height:Math.max(90,bottom-top)
+  };
 }
 
-window.addEventListener('afterprint',()=>{
-  document.body.classList.remove('printing-map');
-});
+function getExportStyleText(){
+  let css='';
+  for(const sheet of Array.from(document.styleSheets||[])){
+    try{
+      for(const rule of Array.from(sheet.cssRules||[])) css+=`${rule.cssText}\n`;
+    }catch(_){ }
+  }
+  return css;
+}
+
+function replaceExportCanvasWithImage(clone,sourceCanvas,id){
+  const target=clone.querySelector(`#${id}`);
+  if(!target || !sourceCanvas) return;
+  try{
+    const img=document.createElement('img');
+    img.id=id;
+    img.alt='';
+    img.src=sourceCanvas.toDataURL('image/png');
+    img.setAttribute('aria-hidden','true');
+    target.replaceWith(img);
+  }catch(_){
+    // Si une image distante rend le canvas non exportable (CORS), on masque
+    // uniquement ce calque au lieu de faire échouer tout l'enregistrement.
+    target.remove();
+  }
+}
+
+function buildExportClone(mapWidth,mapHeight){
+  const clone=mindmap.cloneNode(true);
+
+  // L'export contient uniquement le contenu créé, jamais les outils de l'interface.
+  clone.querySelector('#appMenu')?.remove();
+  clone.querySelector('#branchControlsLayer')?.remove();
+  clone.querySelector('#freeIconOverlayLayer')?.remove();
+  clone.querySelector('#freeIconResizePreview')?.remove();
+  clone.querySelector('#editorLayer')?.remove();
+  clone.querySelectorAll('.centre-add-branch,.centre-add-icon').forEach(el=>el.remove());
+
+  const centreCopy=clone.querySelector('#centreInput');
+  if(centreCopy){
+    centreCopy.value=centreInput.value;
+    centreCopy.textContent=centreInput.value;
+    centreCopy.setAttribute('readonly','readonly');
+  }
+
+  replaceExportCanvasWithImage(clone,freeIconLayer,'freeIconLayer');
+  replaceExportCanvasWithImage(clone,freeIconFrontLayer,'freeIconFrontLayer');
+
+  clone.style.setProperty('position','relative','important');
+  clone.style.setProperty('width',`${mapWidth}px`,'important');
+  clone.style.setProperty('height',`${mapHeight}px`,'important');
+  clone.style.setProperty('min-width','0','important');
+  clone.style.setProperty('min-height','0','important');
+  clone.style.setProperty('max-width','none','important');
+  clone.style.setProperty('max-height','none','important');
+  clone.style.setProperty('overflow','hidden','important');
+  clone.style.setProperty('background','#fff','important');
+  return clone;
+}
+
+async function renderMindMapToJpeg(){
+  const mapRect=mindmap.getBoundingClientRect();
+  const mapWidth=Math.max(1,Math.round(mapRect.width));
+  const mapHeight=Math.max(1,Math.round(mapRect.height));
+  const bounds=getMindMapExportBounds(42);
+  const clone=buildExportClone(mapWidth,mapHeight);
+  const serializer=new XMLSerializer();
+  const cloneMarkup=serializer.serializeToString(clone);
+  const css=getExportStyleText();
+
+  const exportOverrides=`
+    #mindmap{position:relative!important;width:${mapWidth}px!important;height:${mapHeight}px!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;overflow:hidden!important;background:#fff!important;}
+    #appMenu,#branchControlsLayer,#freeIconOverlayLayer,#freeIconResizePreview,#editorLayer,.centre-add-branch,.centre-add-icon,.branch-hit{display:none!important;visibility:hidden!important;}
+    .control-group,.child-control-group,.main-drag-handle,.node-drag-handle,.drag-touch-zone{display:none!important;visibility:hidden!important;}
+  `;
+
+  const svgMarkup=`<svg xmlns="http://www.w3.org/2000/svg" width="${bounds.width}" height="${bounds.height}" viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}">
+    <foreignObject x="0" y="0" width="${mapWidth}" height="${mapHeight}">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:${mapWidth}px;height:${mapHeight}px;background:#fff;overflow:hidden;">
+        <style>${css}\n${exportOverrides}</style>
+        ${cloneMarkup}
+      </div>
+    </foreignObject>
+  </svg>`;
+
+  const svgBlob=new Blob([svgMarkup],{type:'image/svg+xml;charset=utf-8'});
+  const url=URL.createObjectURL(svgBlob);
+  try{
+    const img=new Image();
+    await new Promise((resolve,reject)=>{
+      img.onload=resolve;
+      img.onerror=()=>reject(new Error('Impossible de préparer l’aperçu de la carte.'));
+      img.src=url;
+    });
+
+    const maxSide=4096;
+    const targetScale=Math.min(2,maxSide/Math.max(bounds.width,bounds.height));
+    const scale=Math.max(.6,targetScale);
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round(bounds.width*scale));
+    canvas.height=Math.max(1,Math.round(bounds.height*scale));
+    const ctx=canvas.getContext('2d',{alpha:false});
+    ctx.fillStyle='#fff';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+
+    const blob=await new Promise((resolve,reject)=>{
+      canvas.toBlob(result=>result?resolve(result):reject(new Error('Impossible de créer l’image du projet.')),'image/jpeg',.96);
+    });
+    return {blob,width:canvas.width,height:canvas.height};
+  }finally{
+    URL.revokeObjectURL(url);
+  }
+}
+
+function concatUint8Arrays(parts){
+  const length=parts.reduce((sum,p)=>sum+p.length,0);
+  const out=new Uint8Array(length);
+  let offset=0;
+  for(const part of parts){ out.set(part,offset); offset+=part.length; }
+  return out;
+}
+
+async function createPdfFromJpeg(jpegBlob,pixelWidth,pixelHeight){
+  const enc=new TextEncoder();
+  const jpg=new Uint8Array(await jpegBlob.arrayBuffer());
+  const pageScale=1000/Math.max(pixelWidth,pixelHeight);
+  const pageW=Math.max(120,Math.round(pixelWidth*pageScale*100)/100);
+  const pageH=Math.max(90,Math.round(pixelHeight*pageScale*100)/100);
+  const stream=`q\n${pageW} 0 0 ${pageH} 0 0 cm\n/Im0 Do\nQ\n`;
+
+  const header=enc.encode('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+  const objects=[];
+  objects[1]=enc.encode('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+  objects[2]=enc.encode('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
+  objects[3]=enc.encode(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`);
+  objects[4]=concatUint8Arrays([
+    enc.encode(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${pixelWidth} /Height ${pixelHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`),
+    jpg,
+    enc.encode('\nendstream\nendobj\n')
+  ]);
+  const streamBytes=enc.encode(stream);
+  objects[5]=concatUint8Arrays([
+    enc.encode(`5 0 obj\n<< /Length ${streamBytes.length} >>\nstream\n`),
+    streamBytes,
+    enc.encode('endstream\nendobj\n')
+  ]);
+
+  const offsets=[0];
+  let cursor=header.length;
+  for(let i=1;i<=5;i++){
+    offsets[i]=cursor;
+    cursor+=objects[i].length;
+  }
+  const xrefOffset=cursor;
+  let xref='xref\n0 6\n0000000000 65535 f \n';
+  for(let i=1;i<=5;i++) xref+=`${String(offsets[i]).padStart(10,'0')} 00000 n \n`;
+  const trailer=`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  const pdfBytes=concatUint8Arrays([header,...objects.slice(1),enc.encode(xref),enc.encode(trailer)]);
+  return new Blob([pdfBytes],{type:'application/pdf'});
+}
+
+function projectExportFilename(){
+  const raw=(state.centre||centreInput.value||'carte-mentale').trim().toLowerCase();
+  const clean=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return `${clean||'carte-mentale'}.pdf`;
+}
+
+async function sendPdfToFiles(pdfBlob,filename){
+  const file=new File([pdfBlob],filename,{type:'application/pdf'});
+
+  // Sur iPhone/iPad, la feuille de partage contient « Enregistrer dans Fichiers ».
+  if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+    await navigator.share({files:[file],title:'Carte mentale'});
+    return;
+  }
+
+  // Sur les navigateurs qui le permettent, on ouvre directement le sélecteur de fichier.
+  if(window.showSaveFilePicker){
+    const handle=await window.showSaveFilePicker({
+      suggestedName:filename,
+      types:[{description:'Document PDF',accept:{'application/pdf':['.pdf']}}]
+    });
+    const writable=await handle.createWritable();
+    await writable.write(pdfBlob);
+    await writable.close();
+    return;
+  }
+
+  // Repli universel : téléchargement du fichier, sans passer par l'impression.
+  const url=URL.createObjectURL(pdfBlob);
+  try{
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=filename;
+    a.rel='noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }finally{
+    setTimeout(()=>URL.revokeObjectURL(url),1200);
+  }
+}
+
+async function saveProjectAsPdf(){
+  try{ document.activeElement?.blur?.(); }catch(_){ }
+  closeIconPicker();
+  closeAppMenu();
+  if(activeGroup){ activeGroup.classList.remove('visible'); activeGroup=null; }
+
+  const previousText=savePdfButton?.textContent;
+  if(savePdfButton){
+    savePdfButton.disabled=true;
+    savePdfButton.textContent='Préparation…';
+  }
+
+  try{
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const preview=await renderMindMapToJpeg();
+    const pdf=await createPdfFromJpeg(preview.blob,preview.width,preview.height);
+    await sendPdfToFiles(pdf,projectExportFilename());
+  }catch(err){
+    if(err?.name!=='AbortError'){
+      console.error(err);
+      alert('Impossible d’enregistrer le fichier pour le moment. Réessayez après avoir fermé les menus ou les éditeurs ouverts.');
+    }
+  }finally{
+    if(savePdfButton){
+      savePdfButton.disabled=false;
+      savePdfButton.textContent=previousText||'Enregistrer sous';
+    }
+  }
+}
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape') closeAppMenu();
 });

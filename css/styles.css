@@ -4873,3 +4873,9 @@ body,
     stroke-width: 54px !important;
   }
 }
+
+/* Export fichier : retour visuel pendant la préparation du PDF */
+.app-menu-panel #savePdf:disabled {
+  opacity: .68 !important;
+  cursor: wait !important;
+}
