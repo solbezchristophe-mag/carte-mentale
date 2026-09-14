@@ -69,6 +69,63 @@ body {
   box-shadow: 0 8px 24px rgba(21,83,97,.10);
 }
 
+/* Action contextuelle du sujet central */
+.centre {
+  overflow: visible;
+}
+
+.centre-add-branch {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translate(-50%, 4px) scale(.98);
+  z-index: 90;
+  min-width: 154px;
+  min-height: 36px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--centre);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(21,83,97,.18);
+  font: 600 13px/1.15 "Avenir Next","Segoe UI",Arial,sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease, visibility .16s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.centre:hover .centre-add-branch,
+.centre:focus-within .centre-add-branch,
+.centre.centre-action-visible .centre-add-branch,
+.centre-add-branch:hover,
+.centre-add-branch:focus-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.centre-add-branch:focus-visible {
+  outline: none;
+  box-shadow: 0 10px 24px rgba(21,83,97,.23);
+}
+
+.centre-add-branch:disabled {
+  opacity: .48;
+  cursor: default;
+}
+
+.centre:hover #centreInput,
+.centre:focus-within #centreInput,
+.centre.centre-action-visible #centreInput {
+  padding-bottom: 34px;
+}
+
 .centre textarea {
   position: absolute;
   left: 50%;
@@ -299,7 +356,7 @@ body {
 }
 
 @media (max-width:1100px) {#mindmap {
-    min-width: 800px;
+    min-width: 0;
 }
 
   .centre {
@@ -4628,4 +4685,78 @@ body.editing-branch-text #editorLayer {
 
 body.editing-branch-text #branchTextEditor.branch-editor-persistent {
   pointer-events: auto !important;
+}
+/* Responsive iPhone / iPad */
+html,
+body,
+#mindmap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+#mindmap {
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+@media (pointer: coarse), (hover: none) {
+  .centre {
+    width: clamp(150px, 48vw, 215px);
+  }
+
+  .app-menu {
+    right: max(8px, env(safe-area-inset-right));
+    top: max(8px, env(safe-area-inset-top));
+  }
+
+  .centre-add-branch {
+    bottom: 8px;
+    min-width: 148px;
+    min-height: 38px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 560px) {
+  .centre-add-branch {
+    bottom: 7px;
+    min-width: 142px;
+    min-height: 36px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+  }
+}
+
+
+/* ============================================================
+   V41 — bulle « Ajouter une branche » plus compacte
+   ============================================================ */
+.centre-add-branch {
+  min-height: 28px;
+  min-width: 146px;
+  padding: 5px 12px;
+  font-size: 12px;
+  line-height: 1.05;
+  bottom: 9px;
+}
+
+@media (pointer: coarse), (hover: none) {
+  .centre-add-branch {
+    min-height: 30px;
+    min-width: 146px;
+    padding: 5px 12px;
+    font-size: 12px;
+    bottom: 8px;
+  }
+}
+
+@media (max-width: 560px) {
+  .centre-add-branch {
+    min-height: 28px;
+    min-width: 138px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    bottom: 7px;
+  }
 }

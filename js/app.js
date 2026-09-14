@@ -15,6 +15,7 @@ function getBranchTextEditor(){
   return branchTextEditor;
 }
 const addBranchButton = document.getElementById('addBranch');
+const centreAddBranchButton = document.getElementById('centreAddBranch');
 const resetButton = document.getElementById('resetMap');
 const savePdfButton = document.getElementById('savePdf');
 let freeIconLayer = document.getElementById('freeIconLayer');
@@ -2548,6 +2549,10 @@ function render(){
   const full=state.branches.length>=MAX_MAIN_BRANCHES;
   addBranchButton.disabled=full;
   addBranchButton.textContent=full?'8 branches maximum':'+ Ajouter une branche';
+  if(centreAddBranchButton){
+    centreAddBranchButton.disabled=full;
+    centreAddBranchButton.textContent=full?'8 branches maximum':'+ Ajouter une branche';
+  }
 
   // Après A− / A+, garder le même menu visible pour permettre plusieurs clics
   // successifs sans devoir repasser la souris sur la branche.
@@ -2786,6 +2791,12 @@ bindReliableMenuAction(addBranchButton, ()=>{
   }
   closeAppMenu();
 });
+
+if(centreAddBranchButton){
+  bindReliableMenuAction(centreAddBranchButton, ()=>{
+    addMainBranch();
+  });
+}
 
 bindReliableMenuAction(addFreeIconButton, ()=>{
   closeAppMenu();
