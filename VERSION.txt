@@ -1,3 +1,1 @@
-Carte mentale interactive — version définitive
-Base consolidée depuis v46
-Date : 2026-09-14
+Version définitive — bouton + Icône en bas à droite

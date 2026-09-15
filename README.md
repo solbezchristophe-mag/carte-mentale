@@ -13,7 +13,8 @@ Cette version consolide la **v46** en une base propre et stable. Elle est destin
 - sujet central « MON PROJET » éditable ;
 - ajout de branches, idées et sous-idées ;
 - menu contextuel des branches avec couleurs, texte, taille, icônes et suppression ;
-- bouton `+ Icône` et `+ Ajouter une branche` dans la bulle centrale ;
+- bouton `+ Ajouter une branche` dans la bulle centrale ;
+- bouton rapide `+ Icône` fixé en bas à droite ;
 - meilleure zone de sélection des branches à la souris et au tactile ;
 - responsive iPhone, iPad et ordinateur ;
 - sauvegarde locale du projet ;

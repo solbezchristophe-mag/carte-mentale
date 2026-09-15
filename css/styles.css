@@ -4955,3 +4955,65 @@ body,
   .pdf-export-preview-actions { flex-direction: column-reverse; }
   .pdf-export-preview-actions button { width: 100%; min-height: 46px; }
 }
+
+/* ============================================================
+   ACTION RAPIDE « + ICÔNE » — BAS DROIT
+   ============================================================ */
+
+/* Le bouton d'icône libre n'est plus dans la bulle centrale :
+   il reste toujours disponible en bas à droite de l'écran. */
+.floating-add-icon,
+#centreAddIcon.floating-add-icon {
+  position: fixed !important;
+  right: max(16px, env(safe-area-inset-right)) !important;
+  bottom: max(16px, env(safe-area-inset-bottom)) !important;
+  left: auto !important;
+  top: auto !important;
+  z-index: 230 !important;
+  min-width: 128px !important;
+  min-height: 34px !important;
+  padding: 7px 14px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--centre) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 22px rgba(21,83,97,.18) !important;
+  font: 600 12px/1.05 "Avenir Next","Segoe UI",Arial,sans-serif !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: none !important;
+  transition: transform .16s ease, box-shadow .16s ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
+}
+
+#centreAddIcon.floating-add-icon:hover,
+#centreAddIcon.floating-add-icon:focus-visible {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 10px 24px rgba(21,83,97,.23) !important;
+  outline: none !important;
+}
+
+/* Comme le bouton + Icône n'est plus dans le centre, on ne réserve plus
+   d'espace au-dessus du nom du projet. */
+.centre:hover #centreInput,
+.centre:focus-within #centreInput,
+.centre.centre-action-visible #centreInput {
+  padding-top: 0 !important;
+  padding-bottom: 30px !important;
+}
+
+@media (max-width: 560px) {
+  .floating-add-icon,
+  #centreAddIcon.floating-add-icon {
+    right: max(12px, env(safe-area-inset-right)) !important;
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    min-width: 112px !important;
+    min-height: 32px !important;
+    padding: 6px 12px !important;
+    font-size: 11.5px !important;
+  }
+}
